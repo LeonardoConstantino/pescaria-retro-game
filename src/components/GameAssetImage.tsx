@@ -144,7 +144,7 @@ export const GameAssetImage: React.FC<GameAssetImageProps> = ({
       {/* Tenta carregar a imagem do asset caso exista no servidor */}
       {!hasError ? (
         <img
-          src={`/${assetId}.png`}
+          src={`${import.meta.env.BASE_URL}${assetId}.png`}
           alt={name || assetId}
           referrerPolicy="no-referrer"
           className="w-full h-full object-contain p-1.5 transition-transform hover:scale-105"

@@ -1,0 +1,213 @@
+// src/components/HeaderBar.tsx
+import React, { useState } from 'react';
+import { PlayerProfile } from '../game/managers/PlayerManager.js';
+import { GameLocation } from '../game/data/locations.data.js';
+import { sound } from '../utils/audio.js';
+import {
+  Coins,
+  Sparkles,
+  Volume2,
+  VolumeX,
+  MapPin,
+  ShoppingBag,
+  Package,
+  Trophy,
+  User,
+  Edit2,
+  Check,
+} from 'lucide-react';
+
+interface HeaderBarProps {
+  player: PlayerProfile;
+  currentLocation: GameLocation;
+  levelInfo: { currentLevelBaseXp: number; nextLevelXp: number };
+  onOpenInventory: () => void;
+  onOpenShop: () => void;
+  onOpenLocations: () => void;
+  onOpenLeaderboard: () => void;
+  onUpdatePlayerName: (newName: string) => void;
+}
+
+export const HeaderBar: React.FC<HeaderBarProps> = ({
+  player,
+  currentLocation,
+  levelInfo,
+  onOpenInventory,
+  onOpenShop,
+  onOpenLocations,
+  onOpenLeaderboard,
+  onUpdatePlayerName,
+}) => {
+  const [isMuted, setIsMuted] = useState(!sound.enabled);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [nameInput, setNameInput] = useState(player.name);
+
+  const toggleMute = () => {
+    const newState = !sound.toggleSound();
+    setIsMuted(newState);
+  };
+
+  const handleSaveName = () => {
+    if (nameInput.trim()) {
+      onUpdatePlayerName(nameInput.trim());
+    }
+    setIsEditingName(false);
+  };
+
+  // XP Calculations
+  const xpInCurrentLevel = Math.max(0, player.xp - levelInfo.currentLevelBaseXp);
+  const xpNeededForLevel = Math.max(1, levelInfo.nextLevelXp - levelInfo.currentLevelBaseXp);
+  const progressPercent = Math.min(100, Math.max(0, (xpInCurrentLevel / xpNeededForLevel) * 100));
+
+  return (
+    <header className="sticky top-0 z-30 w-full bg-slate-950/80 backdrop-blur-md border-b border-slate-800/80 px-4 py-2.5 transition-all">
+      <div className="max-w-6xl mx-auto flex flex-wrap items-center justify-between gap-3">
+        {/* Lado Esquerdo: Perfil & XP */}
+        <div className="flex items-center gap-3">
+          {/* Avatar & Nível */}
+          <div className="relative group">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-sky-600 to-indigo-600 p-0.5 shadow-lg shadow-indigo-950/50">
+              <div className="w-full h-full bg-slate-900 rounded-[14px] flex items-center justify-center overflow-hidden">
+                <User className="w-6 h-6 text-sky-300" />
+              </div>
+            </div>
+            <div className="absolute -bottom-1.5 -right-1.5 px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[11px] font-black tracking-tight shadow-md border-2 border-slate-900">
+              Nv.{player.level}
+            </div>
+          </div>
+
+          {/* Nome e Barra de XP */}
+          <div className="flex flex-col">
+            <div className="flex items-center gap-1.5">
+              {isEditingName ? (
+                <div className="flex items-center gap-1">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={(e) => setNameInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSaveName()}
+                    maxLength={16}
+                    autoFocus
+                    className="px-2 py-0.5 text-xs bg-slate-800 border border-amber-400/60 rounded text-slate-100 focus:outline-none focus:ring-1 focus:ring-amber-400"
+                  />
+                  <button
+                    onClick={handleSaveName}
+                    className="p-1 hover:bg-slate-800 rounded text-emerald-400"
+                    title="Salvar Nome"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-semibold text-sm text-slate-100 tracking-wide">
+                    {player.name}
+                  </span>
+                  <button
+                    onClick={() => setIsEditingName(true)}
+                    className="text-slate-500 hover:text-slate-300 transition-colors"
+                    title="Editar Nome"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
+
+              {player.boosts.rarity && (
+                <span className="px-1.5 py-0.5 text-[10px] font-bold rounded-md bg-purple-900/60 text-purple-300 border border-purple-500/40 animate-pulse">
+                  ✨ Boost {player.boosts.rarity.remaining}x
+                </span>
+              )}
+            </div>
+
+            {/* Barra de XP */}
+            <div className="w-32 sm:w-44 mt-1">
+              <div className="flex justify-between text-[10px] text-slate-400 mb-0.5 font-medium">
+                <span>XP</span>
+                <span>{Math.round(xpInCurrentLevel)}/{Math.round(xpNeededForLevel)}</span>
+              </div>
+              <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden border border-slate-700/50">
+                <div
+                  className="h-full bg-gradient-to-r from-sky-400 via-indigo-400 to-amber-300 rounded-full transition-all duration-500"
+                  style={{ width: `${progressPercent}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Centro / Moedas & Local */}
+        <div className="flex items-center gap-2 sm:gap-3">
+          {/* Moedas */}
+          <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 shadow-inner">
+            <Coins className="w-4 h-4 text-amber-400 animate-pulse" />
+            <span className="font-black text-sm sm:text-base tracking-wide text-amber-200">
+              {player.coins.toLocaleString('pt-BR')}
+            </span>
+          </div>
+
+          {/* Local Atual */}
+          <button
+            onClick={onOpenLocations}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800/80 border border-slate-700/70 text-slate-200 text-xs sm:text-sm font-medium transition-all hover:scale-105 active:scale-95 shadow-sm"
+            title="Mudar Local de Pesca"
+          >
+            <MapPin className="w-4 h-4 text-sky-400 shrink-0" />
+            <span className="hidden xs:inline truncate max-w-[120px]">{currentLocation.name}</span>
+            <span className="xs:hidden">Viajar</span>
+          </button>
+        </div>
+
+        {/* Lado Direito: Ações & Som */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Inventário */}
+          <button
+            onClick={onOpenInventory}
+            className="relative flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/70 text-slate-200 text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+            title="Cesto de Peixes e Mochila"
+          >
+            <Package className="w-4 h-4 text-emerald-400 sm:mr-1.5" />
+            <span className="hidden sm:inline">Cesto</span>
+            {player.inventory.fish.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-emerald-500 text-slate-950 text-[10px] font-black flex items-center justify-center border-2 border-slate-900">
+                {player.inventory.fish.length}
+              </span>
+            )}
+          </button>
+
+          {/* Loja */}
+          <button
+            onClick={onOpenShop}
+            className="flex items-center justify-center p-2 sm:px-3 sm:py-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/70 text-slate-200 text-xs font-semibold transition-all hover:scale-105 active:scale-95 shadow-sm"
+            title="Loja de Equipamentos"
+          >
+            <ShoppingBag className="w-4 h-4 text-amber-400 sm:mr-1.5" />
+            <span className="hidden sm:inline">Loja</span>
+          </button>
+
+          {/* Ranking */}
+          <button
+            onClick={onOpenLeaderboard}
+            className="flex items-center justify-center p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/70 text-slate-200 transition-all hover:scale-105 active:scale-95 shadow-sm"
+            title="Tabela de Classificação"
+          >
+            <Trophy className="w-4 h-4 text-yellow-400" />
+          </button>
+
+          {/* Som */}
+          <button
+            onClick={toggleMute}
+            className={`p-2 rounded-xl border transition-all hover:scale-105 active:scale-95 shadow-sm ${
+              isMuted
+                ? 'bg-red-950/30 border-red-800/50 text-red-400'
+                : 'bg-slate-800/90 border-slate-600/70 text-sky-400'
+            }`}
+            title={isMuted ? 'Ativar Efeitos Sonoros' : 'Mutar Som'}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        </div>
+      </div>
+    </header>
+  );
+};

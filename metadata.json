@@ -1,0 +1,6 @@
+{
+  "name": "Jogo de Pesca",
+  "description": "Web app interativo de pescaria com progressão de níveis, locais de pesca, loja de equipamentos, eventos e inventário.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

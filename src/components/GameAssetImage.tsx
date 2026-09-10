@@ -13,6 +13,10 @@ import {
   Flame,
   Waves,
   Feather,
+  Eye,
+  Droplets,
+  Bug,
+  Star,
 } from 'lucide-react';
 
 interface GameAssetImageProps {
@@ -88,6 +92,22 @@ export const GameAssetImage: React.FC<GameAssetImageProps> = ({
 
     // 2. Varas
     if (assetId.startsWith('rod_')) {
+      if (assetId === 'rod_celestial') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full">
+            <Anchor className="w-2/3 h-2/3 text-violet-300 drop-shadow-[0_0_12px_rgba(168,85,247,0.9)]" />
+            <Star className="absolute top-1 right-1 w-4 h-4 text-amber-300 animate-spin" />
+          </div>
+        );
+      }
+      if (assetId === 'rod_leviathan') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full">
+            <Anchor className="w-2/3 h-2/3 text-cyan-400 drop-shadow-[0_0_10px_rgba(6,182,212,0.8)]" />
+            <Waves className="absolute bottom-1 w-4 h-4 text-sky-300" />
+          </div>
+        );
+      }
       if (assetId === 'rod_legendary') {
         return (
           <div className="relative flex items-center justify-center w-full h-full">
@@ -96,17 +116,76 @@ export const GameAssetImage: React.FC<GameAssetImageProps> = ({
           </div>
         );
       }
+      if (assetId === 'rod_abyssal') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full">
+            <Anchor className="w-2/3 h-2/3 text-purple-400 drop-shadow-[0_0_8px_rgba(192,132,252,0.6)]" />
+            <Flame className="absolute bottom-1 right-1 w-3.5 h-3.5 text-rose-400" />
+          </div>
+        );
+      }
+      if (assetId === 'rod_advanced') {
+        return <Anchor className="w-2/3 h-2/3 text-indigo-400" />;
+      }
+      if (assetId === 'rod_titanium') {
+        return <Anchor className="w-2/3 h-2/3 text-teal-300" />;
+      }
+      if (assetId === 'rod_bamboo') {
+        return <Anchor className="w-2/3 h-2/3 text-emerald-400" />;
+      }
       return <Anchor className="w-2/3 h-2/3 text-sky-300" />;
     }
 
     // 3. Iscas
     if (assetId.startsWith('bait_')) {
+      if (assetId === 'bait_kraken_eye') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full text-purple-400">
+            <Eye className="w-3/4 h-3/4 animate-pulse drop-shadow-[0_0_10px_rgba(168,85,247,0.8)]" />
+            <Sparkles className="absolute -top-1 -right-1 w-3.5 h-3.5 text-amber-300" />
+          </div>
+        );
+      }
       if (assetId === 'bait_golden') {
         return (
           <div className="relative flex items-center justify-center w-full h-full">
             <Sparkles className="w-3/4 h-3/4 text-amber-300 animate-pulse drop-shadow-[0_0_12px_rgba(245,158,11,0.9)]" />
           </div>
         );
+      }
+      if (assetId === 'bait_blood_extract') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full text-rose-500">
+            <Droplets className="w-2/3 h-2/3 animate-bounce" />
+          </div>
+        );
+      }
+      if (assetId === 'bait_live_minnow') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full text-sky-300">
+            <Fish className="w-2/3 h-2/3" />
+          </div>
+        );
+      }
+      if (assetId === 'bait_lure_glow') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full text-cyan-300">
+            <Zap className="w-2/3 h-2/3 animate-pulse drop-shadow-[0_0_8px_rgba(6,182,212,0.8)]" />
+          </div>
+        );
+      }
+      if (assetId === 'bait_cricket') {
+        return (
+          <div className="relative flex items-center justify-center w-full h-full text-emerald-400">
+            <Bug className="w-2/3 h-2/3" />
+          </div>
+        );
+      }
+      if (assetId === 'bait_dough') {
+        return <CircleDot className="w-2/3 h-2/3 text-amber-300" />;
+      }
+      if (assetId === 'bait_shrimp') {
+        return <CircleDot className="w-2/3 h-2/3 text-rose-400" />;
       }
       return <CircleDot className="w-2/3 h-2/3 text-orange-400" />;
     }

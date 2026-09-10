@@ -19,6 +19,13 @@ import { LevelUpModal } from './components/LevelUpModal.js';
 import { BestiaryModal } from './components/BestiaryModal.js';
 import { ReelTensionMeter } from './components/ReelTensionMeter.js';
 import { FloatingFeedback, FloatingItem } from './components/FloatingFeedback.js';
+import { IdleShopModal } from './components/IdleShopModal.js';
+import { PrestigeModal } from './components/PrestigeModal.js';
+import { AchievementsModal } from './components/AchievementsModal.js';
+import { MissionsModal } from './components/MissionsModal.js';
+import { AquariumModal } from './components/AquariumModal.js';
+import { TalentModal } from './components/TalentModal.js';
+import { WeatherBanner } from './components/WeatherBanner.js';
 import { sound } from './utils/audio.js';
 import { vibrate } from './utils/vibrate.js';
 import {
@@ -32,6 +39,9 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  Bot,
+  Scroll,
+  Waves,
 } from 'lucide-react';
 
 const CHAT_ID = 'web_session';
@@ -57,9 +67,26 @@ export default function App() {
   // Estados de Modais
   const [showInventory, setShowInventory] = useState(false);
   const [showShop, setShowShop] = useState(false);
+  const [showIdleShop, setShowIdleShop] = useState(false);
+  const [showPrestige, setShowPrestige] = useState(false);
+  const [showAchievements, setShowAchievements] = useState(false);
   const [showLocations, setShowLocations] = useState(false);
   const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showBestiary, setShowBestiary] = useState(false);
+  const [showMissions, setShowMissions] = useState(false);
+  const [showAquarium, setShowAquarium] = useState(false);
+  const [showTalents, setShowTalents] = useState(false);
+  const [unclaimedMissions, setUnclaimedMissions] = useState(() => game.missionManager.getUnclaimedCount(USER_ID));
+
+  // Pontos de Talentos Disponíveis
+  const availableTalentPoints = useMemo(() => {
+    const st = game.getTalentStatus(USER_ID);
+    return st.ok && st.data ? st.data.availablePoints : 0;
+  }, [game, player]);
+
+  // Clima do Lago em Tempo Real
+  const [currentWeather, setCurrentWeather] = useState(() => game.getCurrentWeather());
+  const [weatherSecondsLeft, setWeatherSecondsLeft] = useState(() => game.getWeatherTimeRemaining());
 
   // Estados de Resultados & Celebração
   const [catchResult, setCatchResult] = useState<FishingCollectResult | null>(null);
@@ -76,11 +103,17 @@ export default function App() {
   const [floatingItems, setFloatingItems] = useState<FloatingItem[]>([]);
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'info' | 'success' | 'warning' } | null>(null);
 
-  const addFloating = (text: string, type: 'xp' | 'coins' | 'perfect' | 'legendary' | 'weight') => {
+  const addFloating = (
+    text: string,
+    type: 'xp' | 'coins' | 'perfect' | 'legendary' | 'weight' | 'level',
+    position?: { x: number; y: number },
+  ) => {
     const newItem: FloatingItem = {
       id: `${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
       text,
       type,
+      x: position?.x,
+      y: position?.y,
     };
     setFloatingItems((prev) => [...prev.slice(-4), newItem]);
   };
@@ -95,6 +128,7 @@ export default function App() {
     if (updated) {
       setPlayer({ ...updated });
     }
+    setUnclaimedMissions(game.missionManager.getUnclaimedCount(USER_ID));
   };
 
   const showToast = (text: string, type: 'info' | 'success' | 'warning' = 'info') => {
@@ -107,6 +141,11 @@ export default function App() {
   const triggerScreenShake = () => {
     setScreenShake(true);
     setTimeout(() => setScreenShake(false), 350);
+  };
+
+  const triggerHitFlash = (duration = 100) => {
+    setHitFlash(true);
+    setTimeout(() => setHitFlash(false), duration);
   };
 
   // Local Atual
@@ -128,6 +167,78 @@ export default function App() {
     return game.playerManager.xpForNextLevel(player.level);
   }, [player.level, player.xp]);
 
+  // Moedas por Segundo (CPS) Totais dos Ajudantes
+  const totalCps = useMemo(() => {
+    return game.getTotalCps(USER_ID);
+  }, [player.idleFishers, player.idleUpgrades, player.activeBuffs, player.coins]);
+
+  // Upgrades Disponíveis para Compra
+  const availableUpgrades = useMemo(() => {
+    return game.getAvailableUpgrades(USER_ID);
+  }, [player.idleFishers, player.idleUpgrades, player.stats.totalWaterClicks, player.coins]);
+
+  // Status Completo de Prestígio / Ascensão Cósmica
+  const prestigeStatus = useMemo(() => {
+    return game.getPrestigeStatus(USER_ID);
+  }, [player.stats.totalCoinsEarned, player.stats.lifetimeCoinsEarned, player.cosmicScales, player.cosmicBlessings, player.claimedScalesTotal]);
+
+  // Status de Conquistas & Marcos
+  const achievementsStatus = useMemo(() => {
+    return game.getAchievementsStatus(USER_ID);
+  }, [player.unlockedAchievements, player.stats, totalCps]);
+
+  // Loop Contínuo de Produção Passiva (Cookie Clicker Loop)
+  useEffect(() => {
+    // Processa ganhos offline imediatamente ao montar
+    const offlineReport = game.processIdleTick(USER_ID);
+    if (offlineReport.coinsEarned > 0) {
+      refreshPlayer();
+      if (offlineReport.secondsElapsed > 10) {
+        addFloating(`+${offlineReport.coinsEarned.toLocaleString('pt-BR')} 🪙 (Renda Offline)`, 'coins');
+        showToast(
+          `Seus pescadores renderam +${offlineReport.coinsEarned.toLocaleString('pt-BR')} 🪙 enquanto você esteve fora!`,
+          'success',
+        );
+      }
+    }
+
+    // Tick contínuo de 1 segundo para produção passiva, clima e expiração de buffs
+    const interval = setInterval(() => {
+      const buffsChanged = game.cleanExpiredBuffs(USER_ID);
+      const currentCps = game.getTotalCps(USER_ID);
+      if (currentCps > 0) {
+        const tick = game.processIdleTick(USER_ID);
+        if (tick.coinsEarned > 0 || buffsChanged) {
+          refreshPlayer();
+        }
+      } else if (buffsChanged) {
+        refreshPlayer();
+      }
+
+      // Atualiza clima do lago
+      setCurrentWeather(game.getCurrentWeather());
+      setWeatherSecondsLeft(game.getWeatherTimeRemaining());
+
+      // Avalia conquistas alcançadas
+      const newAchs = game.checkAchievements(USER_ID);
+      if (newAchs.length > 0) {
+        refreshPlayer();
+        newAchs.forEach((ach) => {
+          sound.playAchievement();
+          addFloating(`🏆 ${ach.title}! (+${ach.bonusPercent}%)`, 'level');
+          showToast(`Conquista Desbloqueada: ${ach.title}! ${ach.description}`, 'success');
+        });
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // Poder do Clique Atual
+  const clickPowerInfo = useMemo(() => {
+    return game.getClickPower(USER_ID);
+  }, [player.activeBuffs, player.coins, totalCps]);
+
   // Peixes únicos pescados (para o Bestiário)
   const caughtFishIds = useMemo(() => {
     const ids = new Set<string>();
@@ -138,12 +249,18 @@ export default function App() {
     return Array.from(ids);
   }, [player.inventory.fish, player.stats.largestFishName]);
 
+  // Vara de pesca equipada atualmente
+  const equippedRod = useMemo(() => {
+    return ItemData.find((i) => i.id === player.equipment.rod) || null;
+  }, [player.equipment.rod]);
+
   // 1. LANÇAR LINHA
   const handleCast = () => {
     if (isCasting) return;
     setIsCasting(true);
 
-    const response = game.cast(CHAT_ID, USER_ID);
+    const biteSpeedMult = currentWeather?.biteSpeedMultiplier || 1.0;
+    const response = game.cast(CHAT_ID, USER_ID, biteSpeedMult);
     refreshPlayer();
 
     if (response.ok) {
@@ -159,20 +276,19 @@ export default function App() {
     setIsCasting(false);
   };
 
-  // 2. INICIAR RECOLHIMENTO (ABRE MEDIDOR DE TENSÃO OU COLETAR DIRETO)
+  // 2. INICIAR RECOLHIMENTO (ABRE MEDIDOR DE TENSÃO E BATALHA DE PESCA)
   const handleCollect = () => {
     if (isCollecting) return;
-    // Abre o minigame de tensão e quick-time
     setShowTensionMeter(true);
   };
 
-  // 2b. EXECUTAR COLETAR COM RESULTADO DO QUICK-TIME (PERFEITO OU NORMAL)
+  // 2b. EXECUTAR COLETAR COM RESULTADO DO COMBATE DE PESCA
   const executeCollect = (isPerfect: boolean) => {
     setShowTensionMeter(false);
     setIsCollecting(true);
 
     if (isPerfect) {
-      addFloating('⭐ FISGADA PERFEITA! (+25% PESO)', 'perfect');
+      addFloating('⭐ DOMÍNIO PERFEITO! (+25% PESO)', 'perfect');
     }
 
     const response = game.collect(CHAT_ID, USER_ID, { isPerfect });
@@ -236,9 +352,20 @@ export default function App() {
     setIsCollecting(false);
   };
 
+  // 2c. QUANDO A LINHA ARREBENTA DURANTE O COMBATE
+  const handleLineSnap = () => {
+    setShowTensionMeter(false);
+    game.cancelSession(CHAT_ID, USER_ID);
+    setActiveSession(null);
+    refreshPlayer();
+    addFloating('💥 A LINHA ESTOUROU!', 'coins');
+    showToast('A linha não suportou a tensão extrema e o peixe escapou!', 'warning');
+  };
+
   // 3. VENDER PEIXE
   const handleSellFish = (inventoryId: string) => {
-    const res = game.sellFish(USER_ID, inventoryId);
+    const coinsMult = currentWeather?.coinsMultiplier || 1.0;
+    const res = game.sellFish(USER_ID, inventoryId, coinsMult);
     refreshPlayer();
     if (res.ok) {
       sound.playCoins();
@@ -252,7 +379,8 @@ export default function App() {
 
   // 4. VENDER TODOS OS PEIXES
   const handleSellAllFish = () => {
-    const res = game.sellAll(USER_ID);
+    const coinsMult = currentWeather?.coinsMultiplier || 1.0;
+    const res = game.sellAll(USER_ID, coinsMult);
     refreshPlayer();
     if (res.ok) {
       sound.playCoins();
@@ -280,6 +408,107 @@ export default function App() {
     if (res.ok) {
       sound.playCoins();
       vibrate.coins();
+      showToast(res.message, 'success');
+    } else {
+      sound.playThud();
+      showToast(res.message, 'warning');
+    }
+  };
+
+  // 5.1 COMPRAR AJUDANTE DE AUTOMAÇÃO (COOKIE CLICKER)
+  const handleBuyIdleTier = (tierId: string) => {
+    const res = game.buyIdleFisher(USER_ID, tierId);
+    refreshPlayer();
+    if (res.ok) {
+      sound.playCoins();
+      vibrate.coins();
+      addFloating(`+${res.data?.newCps} 🪙/s`, 'coins');
+      showToast(res.message, 'success');
+    } else {
+      sound.playThud();
+      showToast(res.message, 'warning');
+    }
+  };
+
+  // 5.1.1 COMPRAR UPGRADE DE EFICIÊNCIA (COOKIE CLICKER UPGRADES)
+  const handleBuyIdleUpgrade = (upgradeId: string) => {
+    const res = game.buyIdleUpgrade(USER_ID, upgradeId);
+    refreshPlayer();
+    if (res.ok) {
+      sound.playCoins();
+      vibrate.coins();
+      triggerHitFlash();
+      addFloating(`2x UPGRADE!`, 'level');
+      showToast(res.message, 'success');
+    } else {
+      sound.playThud();
+      showToast(res.message, 'warning');
+    }
+  };
+
+  // 5.2 CLIQUE MANUAL NA ÁGUA (CLICK POWER & CRÍTICOS)
+  const handleWaterClick = (e: React.MouseEvent) => {
+    const clickResult = game.processWaterClick(USER_ID);
+    refreshPlayer();
+
+    sound.playWaterClick(clickResult.isCritical);
+    if (clickResult.isCritical) {
+      vibrate.coins();
+    }
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+
+    addFloating(
+      clickResult.isCritical
+        ? `🔥 CRÍTICO! +${clickResult.coinsEarned} 🪙`
+        : `+${clickResult.coinsEarned} 🪙`,
+      'coins',
+      { x, y },
+    );
+  };
+
+  // 5.3 COLETAR O PEIXE DOURADO (GOLDEN FISH / GOLDEN COOKIE)
+  const handleCatchGoldenFish = () => {
+    const reward = game.claimGoldenFish(USER_ID);
+    refreshPlayer();
+
+    if (reward) {
+      triggerHitFlash();
+      if (reward.instantCoins) {
+        addFloating(`+${reward.instantCoins.toLocaleString('pt-BR')} 🪙`, 'coins');
+      }
+      showToast(`${reward.title} ${reward.description}`, 'success');
+    }
+  };
+
+  // 5.4 ASCENSÃO CÓSMICA / RENASCIMENTO (COOKIE CLICKER ASCENSION)
+  const handleAscend = () => {
+    const res = game.ascend(USER_ID);
+    refreshPlayer();
+    if (res.ok) {
+      sound.playAscension();
+      vibrate.heavy();
+      triggerHitFlash();
+      addFloating(`🌟 RENASCIMENTO CÓSMICO!`, 'legendary');
+      showToast(res.message, 'success');
+      setShowPrestige(false);
+    } else {
+      sound.playThud();
+      showToast(res.message, 'warning');
+    }
+  };
+
+  // 5.5 COMPRAR BÊNÇÃO CELESTIAL
+  const handleBuyCosmicBlessing = (blessingId: string) => {
+    const res = game.buyCosmicBlessing(USER_ID, blessingId);
+    refreshPlayer();
+    if (res.ok) {
+      sound.playCoins();
+      vibrate.coins();
+      triggerHitFlash();
+      addFloating(`BÊNÇÃO ETERNA!`, 'legendary');
       showToast(res.message, 'success');
     } else {
       sound.playThud();
@@ -322,6 +551,19 @@ export default function App() {
     }
   };
 
+  // 8.1 TRANSFERIR PEIXE PARA O AQUÁRIO DE TROFÉUS
+  const handleSendFishToAquarium = (inventoryId: string) => {
+    const res = game.addFishToAquarium(USER_ID, inventoryId);
+    if (res.ok) {
+      sound.playSplash();
+      showToast(res.message || 'Peixe transferido para o viveiro de troféus!', 'success');
+      refreshPlayer();
+    } else {
+      sound.playThud();
+      showToast(res.message || 'Não foi possível colocar o peixe no aquário.', 'warning');
+    }
+  };
+
   // 9. ATUALIZAR NOME DO JOGADOR
   const handleUpdatePlayerName = (newName: string) => {
     player.name = newName;
@@ -348,10 +590,19 @@ export default function App() {
         player={player}
         currentLocation={currentLocation}
         levelInfo={levelInfo}
+        totalCps={totalCps}
         onOpenInventory={() => setShowInventory(true)}
         onOpenShop={() => setShowShop(true)}
+        onOpenIdleShop={() => setShowIdleShop(true)}
+        onOpenPrestige={() => setShowPrestige(true)}
+        onOpenAchievements={() => setShowAchievements(true)}
         onOpenLocations={() => setShowLocations(true)}
         onOpenLeaderboard={() => setShowLeaderboard(true)}
+        onOpenMissions={() => setShowMissions(true)}
+        onOpenAquarium={() => setShowAquarium(true)}
+        onOpenTalents={() => setShowTalents(true)}
+        unclaimedMissionsCount={unclaimedMissions}
+        availableTalentPoints={availableTalentPoints}
         onUpdatePlayerName={handleUpdatePlayerName}
       />
 
@@ -366,8 +617,13 @@ export default function App() {
           isHitStop ? 'scale-[1.02] filter brightness-125' : ''
         }`}
       >
-        {/* Números Flutuantes de Recompensa (Damage/Reward Numbers) */}
-        <FloatingFeedback items={floatingItems} onDismiss={removeFloating} />
+        {/* Banner de Clima do Lago */}
+        <div className="w-full mb-3">
+          <WeatherBanner
+            weather={currentWeather}
+            timeRemainingSeconds={weatherSecondsLeft}
+          />
+        </div>
 
         <FishingStage
           player={player}
@@ -379,7 +635,11 @@ export default function App() {
           isCollecting={isCollecting}
           onCast={handleCast}
           onCollect={handleCollect}
+          onWaterClick={handleWaterClick}
+          onCatchGoldenFish={handleCatchGoldenFish}
+          clickPower={clickPowerInfo.coins}
           screenShake={screenShake}
+          weather={currentWeather}
         />
 
         {/* Barra de Acesso Rápido Inferior */}
@@ -399,6 +659,35 @@ export default function App() {
             >
               <Trophy className="w-4 h-4 text-yellow-400" />
               <span>Ranking Regional</span>
+            </button>
+
+            <button
+              onClick={() => setShowIdleShop(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-amber-950/40 hover:bg-amber-900/40 text-amber-300 hover:text-amber-200 border border-amber-500/40 transition-all shadow-sm font-semibold"
+            >
+              <Bot className="w-4 h-4 text-amber-400" />
+              <span>Ajudantes ({totalCps} 🪙/s)</span>
+            </button>
+
+            <button
+              onClick={() => setShowMissions(true)}
+              className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-amber-950/50 to-yellow-950/50 hover:from-amber-900/60 hover:to-yellow-900/60 text-amber-300 hover:text-amber-200 border border-amber-500/50 transition-all shadow-sm font-semibold"
+            >
+              <Scroll className="w-4 h-4 text-amber-400" />
+              <span>Missões</span>
+              {unclaimedMissions > 0 && (
+                <span className="px-1.5 py-0.2 rounded-full bg-amber-400 text-slate-950 text-[10px] font-black animate-bounce">
+                  {unclaimedMissions}
+                </span>
+              )}
+            </button>
+
+            <button
+              onClick={() => setShowAquarium(true)}
+              className="relative flex items-center gap-1.5 px-3 py-2 rounded-xl bg-gradient-to-r from-cyan-950/50 to-blue-950/50 hover:from-cyan-900/60 hover:to-blue-900/60 text-cyan-300 hover:text-cyan-200 border border-cyan-500/50 transition-all shadow-sm font-semibold"
+            >
+              <Waves className="w-4 h-4 text-cyan-400" />
+              <span>Aquário ({player.aquarium?.fish.length || 0})</span>
             </button>
           </div>
 
@@ -449,7 +738,29 @@ export default function App() {
         onSellAllFish={handleSellAllFish}
         onEquipItem={handleEquipItem}
         onUnequipBait={handleUnequipBait}
-        calculateFishPrice={(f) => game.shopManager.calculateFishPrice(f)}
+        calculateFishPrice={(f) =>
+          game.shopManager.calculateFishPrice(f, currentWeather?.coinsMultiplier || 1.0)
+        }
+        onSendToAquarium={handleSendFishToAquarium}
+      />
+
+      {/* Modal do Aquário / Viveiro de Troféus Personalizado */}
+      <AquariumModal
+        isOpen={showAquarium}
+        onClose={() => setShowAquarium(false)}
+        game={game}
+        player={player}
+        onUpdatePlayer={refreshPlayer}
+        showToast={(msg) => showToast(msg, 'success')}
+      />
+
+      {/* Modal da Árvore de Maestria & Talentos do Pescador */}
+      <TalentModal
+        isOpen={showTalents}
+        onClose={() => setShowTalents(false)}
+        game={game}
+        userId={USER_ID}
+        onTalentChanged={refreshPlayer}
       />
 
       <ShopModal
@@ -459,6 +770,45 @@ export default function App() {
         catalog={game.getShopCatalog()}
         onBuyItem={handleBuyItem}
         onEquipItem={handleEquipItem}
+      />
+
+      {/* Modal de Ajudantes & Automação (Cookie Clicker) */}
+      <IdleShopModal
+        isOpen={showIdleShop}
+        onClose={() => setShowIdleShop(false)}
+        player={player}
+        totalCps={totalCps}
+        availableUpgrades={availableUpgrades}
+        onBuyTier={handleBuyIdleTier}
+        onBuyUpgrade={handleBuyIdleUpgrade}
+      />
+
+      {/* Modal de Ascensão Cósmica / Prestígio */}
+      <PrestigeModal
+        isOpen={showPrestige}
+        onClose={() => setShowPrestige(false)}
+        status={prestigeStatus}
+        onAscend={handleAscend}
+        onBuyBlessing={handleBuyCosmicBlessing}
+      />
+
+      {/* Modal de Conquistas & Marcos */}
+      <AchievementsModal
+        isOpen={showAchievements}
+        onClose={() => setShowAchievements(false)}
+        status={achievementsStatus}
+      />
+
+      {/* Modal de Missões Diárias & Encomendas */}
+      <MissionsModal
+        isOpen={showMissions}
+        onClose={() => setShowMissions(false)}
+        userId={USER_ID}
+        missionManager={game.missionManager}
+        onMissionClaimed={() => {
+          refreshPlayer();
+        }}
+        showToast={(msg) => showToast(msg, 'success')}
       />
 
       <LocationsModal
@@ -491,6 +841,12 @@ export default function App() {
           bonusFish={catchResult.bonusFish}
           xpEarned={catchResult.xpEarned}
           estimatedPrice={catchResult.fish ? game.shopManager.calculateFishPrice(catchResult.fish) : 0}
+          onSendToAquarium={() => {
+            if (catchResult.fish?.inventoryId) {
+              handleSendFishToAquarium(catchResult.fish.inventoryId);
+            }
+            setCatchResult(null);
+          }}
           onSellNow={() => {
             if (catchResult.fish?.inventoryId) {
               handleSellFish(catchResult.fish.inventoryId);
@@ -518,11 +874,19 @@ export default function App() {
           newLevel={levelUpInfo}
         />
       )}
-      {/* Mini-jogo de Tensão de Recolhimento (Quick-Time Event) */}
+      {/* Minigame de Batalha de Pesca Realista (Reel & Fight Engine) */}
       <ReelTensionMeter
         isOpen={showTensionMeter}
-        onComplete={executeCollect}
+        session={activeSession}
+        rodName={equippedRod?.name || 'Vara Básica'}
+        rodId={player.equipment.rod}
+        onSuccess={executeCollect}
+        onLineSnap={handleLineSnap}
+        onClose={() => setShowTensionMeter(false)}
       />
+
+      {/* Números Flutuantes de Recompensa (Damage/Reward Numbers) montados no topo da árvore DOM */}
+      <FloatingFeedback items={floatingItems} onDismiss={removeFloating} />
     </div>
   );
 }

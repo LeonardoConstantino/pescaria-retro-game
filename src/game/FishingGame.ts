@@ -12,6 +12,16 @@ import { ShopManager } from './managers/ShopManager.js';
 import { EventEngine } from './managers/EventEngine.js';
 import { FishingEngine, FishingCollectResult } from './managers/FishingEngine.js';
 import { RankingManager, RankingEntry } from './managers/RankingManager.js';
+import { IdleManager } from './managers/IdleManager.js';
+import { PrestigeManager, PrestigeStatus } from './managers/PrestigeManager.js';
+import { AchievementManager } from './managers/AchievementManager.js';
+import { WeatherManager } from './managers/WeatherManager.js';
+import { MissionManager } from './managers/MissionManager.js';
+import { AquariumManager } from './managers/AquariumManager.js';
+import { TalentManager } from './managers/TalentManager.js';
+import { Achievement } from './data/achievements.data.js';
+import { WeatherInfo, WeatherType } from './data/weather.data.js';
+import { IdleFisherTier } from './data/idle.data.js';
 import { GameLocation } from './data/locations.data.js';
 import { GameItem } from './data/items.data.js';
 import * as R from './utils/response.builder.js';
@@ -25,21 +35,36 @@ export class FishingGame {
   public eventEngine: EventEngine;
   public fishingEngine: FishingEngine;
   public rankingManager: RankingManager;
+  public idleManager: IdleManager;
+  public prestigeManager: PrestigeManager;
+  public achievementManager: AchievementManager;
+  public weatherManager: WeatherManager;
+  public missionManager: MissionManager;
+  public aquariumManager: AquariumManager;
+  public talentManager: TalentManager;
 
   constructor(customStorage?: LocalStorageAdapter) {
     this.storage = customStorage || new LocalStorageAdapter('fishing_game:');
     this.playerManager = new PlayerManager(this.storage as any);
     this.sessionManager = new SessionManager(this.storage as any);
     this.locationManager = new LocationManager();
-    this.shopManager = new ShopManager(this.playerManager);
+    this.talentManager = new TalentManager(this.playerManager);
+    this.shopManager = new ShopManager(this.playerManager, this.talentManager);
     this.eventEngine = new EventEngine(this.playerManager);
     this.fishingEngine = new FishingEngine(
       this.playerManager,
       this.sessionManager,
       this.locationManager,
       this.eventEngine,
+      this.talentManager,
     );
     this.rankingManager = new RankingManager(this.storage as any);
+    this.idleManager = new IdleManager(this.playerManager, this.talentManager);
+    this.prestigeManager = new PrestigeManager(this.playerManager);
+    this.achievementManager = new AchievementManager(this.playerManager);
+    this.weatherManager = new WeatherManager();
+    this.missionManager = new MissionManager(this.playerManager, this.storage as any);
+    this.aquariumManager = new AquariumManager(this.playerManager, this.talentManager);
   }
 
   initPlayer(userId: string, name = 'Pescador'): PlayerProfile {
@@ -50,8 +75,8 @@ export class FishingGame {
     return this.playerManager.getPlayer(userId);
   }
 
-  cast(chatId: string, userId: string): R.GameResponse {
-    return this.fishingEngine.castLine(chatId, userId);
+  cast(chatId: string, userId: string, biteSpeedMultiplier = 1.0): R.GameResponse {
+    return this.fishingEngine.castLine(chatId, userId, biteSpeedMultiplier);
   }
 
   collect(
@@ -59,7 +84,22 @@ export class FishingGame {
     userId: string,
     options?: { isPerfect?: boolean },
   ): R.GameResponse<FishingCollectResult | null> {
-    return this.fishingEngine.collect(chatId, userId, options);
+    const res = this.fishingEngine.collect(chatId, userId, options);
+    if (res.ok && res.data) {
+      if (res.data.fish) {
+        const p = this.playerManager.getPlayer(userId);
+        const loc = p ? p.currentLocation : 'lake';
+        this.missionManager.onFishCaught(userId, res.data.fish, loc, !!options?.isPerfect);
+      }
+      if (res.data.bait) {
+        this.missionManager.onBaitUsed(userId);
+      }
+    }
+    return res;
+  }
+
+  cancelSession(chatId: string, userId: string): boolean {
+    return this.sessionManager.deleteSession(chatId, userId);
   }
 
   changeLocation(userId: string, locationId: string): R.GameResponse {
@@ -94,20 +134,28 @@ export class FishingGame {
     return this.shopManager.unequipBait(player);
   }
 
-  sellFish(userId: string, inventoryId: string): R.GameResponse {
+  sellFish(userId: string, inventoryId: string, priceMultiplier = 1.0): R.GameResponse {
     const player = this.playerManager.getPlayer(userId);
     if (!player) {
       return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
     }
-    return this.shopManager.sellFish(player, inventoryId);
+    const res = this.shopManager.sellFish(player, inventoryId, priceMultiplier);
+    if (res.ok && res.data && res.data.coinsEarned) {
+      this.missionManager.onCoinsEarned(userId, res.data.coinsEarned);
+    }
+    return res;
   }
 
-  sellAll(userId: string): R.GameResponse {
+  sellAll(userId: string, priceMultiplier = 1.0): R.GameResponse {
     const player = this.playerManager.getPlayer(userId);
     if (!player) {
       return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
     }
-    return this.shopManager.sellAllFish(player);
+    const res = this.shopManager.sellAllFish(player, priceMultiplier);
+    if (res.ok && res.data && res.data.totalCoins) {
+      this.missionManager.onCoinsEarned(userId, res.data.totalCoins);
+    }
+    return res;
   }
 
   getActiveSession(chatId: string, userId: string): FishingSession | null {
@@ -130,8 +178,185 @@ export class FishingGame {
     return this.shopManager.getCatalog();
   }
 
+  getIdleTiers(): IdleFisherTier[] {
+    return this.idleManager.getTiers();
+  }
+
+  getAvailableUpgrades(userId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return [];
+    return this.idleManager.getAvailableUpgrades(player);
+  }
+
+  buyIdleUpgrade(userId: string, upgradeId: string): R.GameResponse {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) {
+      return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
+    }
+    return this.idleManager.buyUpgrade(player, upgradeId);
+  }
+
+  buyIdleFisher(userId: string, tierId: string): R.GameResponse {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) {
+      return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
+    }
+    return this.idleManager.buyIdleFisher(player, tierId);
+  }
+
+  processIdleTick(userId: string): { coinsEarned: number; secondsElapsed: number; totalCps: number } {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) {
+      return { coinsEarned: 0, secondsElapsed: 0, totalCps: 0 };
+    }
+    const result = this.idleManager.processIdleTick(player);
+    const totalCps = this.idleManager.calculateTotalCps(player);
+    return { ...result, totalCps };
+  }
+
+  getTotalCps(userId: string): number {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return 0;
+    return this.idleManager.calculateTotalCps(player);
+  }
+
+  processWaterClick(userId: string): { coinsEarned: number; isCritical: boolean } {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return { coinsEarned: 0, isCritical: false };
+    return this.idleManager.processWaterClick(player);
+  }
+
+  getClickPower(userId: string): { coins: number; isCritical: boolean; multiplier: number } {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return { coins: 1, isCritical: false, multiplier: 1 };
+    return this.idleManager.calculateClickPower(player);
+  }
+
+  claimGoldenFish(userId: string): { effect: string; title: string; description: string; instantCoins?: number } | null {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return null;
+    return this.idleManager.claimGoldenFish(player);
+  }
+
+  cleanExpiredBuffs(userId: string): boolean {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return false;
+    return this.idleManager.cleanExpiredBuffs(player);
+  }
+
   getLeaderboard(userId?: string): RankingEntry[] {
     const player = userId ? this.playerManager.getPlayer(userId) || undefined : undefined;
     return this.rankingManager.getLeaderboard(player);
+  }
+
+  getPrestigeStatus(userId: string): PrestigeStatus | null {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return null;
+    return this.prestigeManager.getPrestigeStatus(player);
+  }
+
+  ascend(userId: string): R.GameResponse {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
+    return this.prestigeManager.ascend(player);
+  }
+
+  buyCosmicBlessing(userId: string, blessingId: string): R.GameResponse {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
+    return this.prestigeManager.buyBlessing(player, blessingId);
+  }
+
+  // Conquistas & Marcos
+  checkAchievements(userId: string): Achievement[] {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return [];
+    const cps = this.getTotalCps(userId);
+    return this.achievementManager.checkAchievements(player, cps);
+  }
+
+  getAchievementsStatus(userId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return null;
+    const cps = this.getTotalCps(userId);
+    return this.achievementManager.getAchievementsStatus(player, cps);
+  }
+
+  // Clima Dinâmico do Lago
+  getCurrentWeather(): WeatherInfo {
+    return this.weatherManager.getCurrentWeather();
+  }
+
+  getWeatherTimeRemaining(): number {
+    return this.weatherManager.getTimeRemainingSeconds();
+  }
+
+  setWeather(type: WeatherType): WeatherInfo {
+    return this.weatherManager.setWeather(type);
+  }
+
+  // Aquário / Viveiro de Troféus
+  getAquarium(userId: string) {
+    return this.aquariumManager.getAquarium(userId);
+  }
+
+  upgradeAquarium(userId: string) {
+    return this.aquariumManager.upgradeTank(userId);
+  }
+
+  addFishToAquarium(userId: string, inventoryId: string) {
+    return this.aquariumManager.addFishToAquarium(userId, inventoryId);
+  }
+
+  removeFishFromAquarium(userId: string, trophyId: string, sell = false) {
+    return this.aquariumManager.removeFishFromAquarium(userId, trophyId, sell);
+  }
+
+  renameAquariumFish(userId: string, trophyId: string, nickname: string) {
+    return this.aquariumManager.renameFish(userId, trophyId, nickname);
+  }
+
+  feedAquariumFish(userId: string) {
+    return this.aquariumManager.feedFish(userId);
+  }
+
+  buyAquariumTheme(userId: string, themeId: string) {
+    return this.aquariumManager.buyTheme(userId, themeId);
+  }
+
+  setAquariumTheme(userId: string, themeId: string) {
+    return this.aquariumManager.setTheme(userId, themeId);
+  }
+
+  buyAquariumDecoration(userId: string, decoId: string) {
+    return this.aquariumManager.buyDecoration(userId, decoId);
+  }
+
+  collectAquariumCoins(userId: string) {
+    return this.aquariumManager.collectVisitorCoins(userId);
+  }
+
+  getTalentStatus(userId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return R.error('PLAYER_NOT_FOUND', 'Jogador não encontrado');
+    const status = this.talentManager.getStatus(player);
+    const resetCost = player.level <= 10 || player.coins < 100 ? 0 : 100;
+    return R.success('talent_status', {
+      ...status,
+      resetCost,
+      canResetFree: resetCost === 0,
+    });
+  }
+
+  learnTalent(userId: string, talentId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return R.error('PLAYER_NOT_FOUND', 'Jogador não encontrado');
+    return this.talentManager.learnTalent(player, talentId);
+  }
+
+  resetTalents(userId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return R.error('PLAYER_NOT_FOUND', 'Jogador não encontrado');
+    return this.talentManager.resetTalents(player);
   }
 }

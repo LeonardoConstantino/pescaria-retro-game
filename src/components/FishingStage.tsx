@@ -7,8 +7,11 @@ import { GameItem } from '../game/data/items.data.js';
 import { FishingSession } from '../game/managers/SessionManager.js';
 import { GameAssetImage } from './GameAssetImage.js';
 import { FishShadows } from './FishShadows.js';
+import { IdleFishersWaterVisual } from './IdleFishersWaterVisual.js';
+import { GoldenFishSpawner } from './GoldenFishSpawner.js';
 import { sound } from '../utils/audio.js';
 import { vibrate } from '../utils/vibrate.js';
+import { WeatherInfo } from '../game/data/weather.data.js';
 import {
   Anchor,
   CircleDot,
@@ -29,7 +32,11 @@ interface FishingStageProps {
   isCollecting: boolean;
   onCast: () => void;
   onCollect: () => void;
+  onWaterClick?: (e: React.MouseEvent) => void;
+  onCatchGoldenFish?: () => void;
+  clickPower?: number;
   screenShake: boolean;
+  weather?: WeatherInfo;
 }
 
 export const FishingStage: React.FC<FishingStageProps> = ({
@@ -42,7 +49,11 @@ export const FishingStage: React.FC<FishingStageProps> = ({
   isCollecting,
   onCast,
   onCollect,
+  onWaterClick,
+  onCatchGoldenFish,
+  clickPower = 1,
   screenShake,
+  weather,
 }) => {
   const [now, setNow] = useState(Date.now());
   const [showFishPool, setShowFishPool] = useState(false);
@@ -156,8 +167,24 @@ export const FishingStage: React.FC<FishingStageProps> = ({
       <div
         className={`relative w-full h-80 sm:h-96 bg-gradient-to-b ${locVisual.sky} flex flex-col justify-between p-4 sm:p-6 overflow-hidden select-none`}
       >
+        {/* Camada Panorâmica do Asset do Local (com transparência atmosférica, blend mode e degradê suave) */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+          <img
+            src={`${import.meta.env.BASE_URL}${currentLocation.assetId}.png`}
+            alt={currentLocation.name}
+            onError={(e) => {
+              // Se a imagem não carregar, oculta suavemente sem quebrar o layout
+              (e.currentTarget as HTMLElement).style.display = 'none';
+            }}
+            className="w-full h-full object-cover object-center opacity-30 mix-blend-luminosity filter saturate-150 contrast-125 scale-105 transition-all duration-700"
+          />
+          {/* Degradês de integração para fundir a imagem com o céu e com a água */}
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-b from-slate-950/60 via-transparent to-transparent" />
+        </div>
+
         {/* Estrelas / Partículas de Ambiente */}
-        <div className="absolute inset-0 opacity-25 pointer-events-none bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px]" />
+        <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] z-[1]" />
 
         {/* Camada Superior: Cartões de Vara & Isca equipadas */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
@@ -225,8 +252,13 @@ export const FishingStage: React.FC<FishingStageProps> = ({
 
         {/* Informação do Local e Botão de Dica / Espécies */}
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-950/70 border border-slate-700/50 backdrop-blur-sm">
-            <Compass className="w-4 h-4 text-sky-400 animate-spin-slow" />
+          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-700/60 backdrop-blur-md shadow-lg">
+            <GameAssetImage
+              assetId={currentLocation.assetId}
+              name={currentLocation.name}
+              size="xs"
+              className="rounded-lg ring-sky-400/40"
+            />
             <div>
               <span className="text-xs font-bold text-slate-200">{currentLocation.name}</span>
               <p className="text-[10px] text-slate-400 hidden sm:block">{locVisual.decor}</p>
@@ -274,11 +306,43 @@ export const FishingStage: React.FC<FishingStageProps> = ({
         </AnimatePresence>
 
         {/* ── ÁGUA & BOIA INTERATIVA ── */}
-        <div className="absolute inset-x-0 bottom-0 h-44 sm:h-52 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950 pointer-events-none">
+        <div
+          className="absolute inset-x-0 bottom-0 h-44 sm:h-52 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950 cursor-pointer select-none"
+          onClick={(e) => {
+            // Se o peixe estiver mordendo, não trata como clique comum de água
+            if (isReady) {
+              onCollect();
+            } else if (onWaterClick) {
+              onWaterClick(e);
+            }
+          }}
+          title={isReady ? 'Clique para recolher!' : `Toque na água para fisgar moedas (+${clickPower} 🪙)`}
+        >
+          {/* Spawner do Peixe Dourado (Golden Fish) */}
+          {onCatchGoldenFish && (
+            <GoldenFishSpawner
+              onCatchGoldenFish={onCatchGoldenFish}
+              chanceMultiplier={weather?.goldenFishChanceMult || 1.0}
+            />
+          )}
+
           {/* Superfície da Água com Ondas */}
           <div
-            className={`w-full h-full bg-gradient-to-t ${locVisual.water} backdrop-blur-[2px] relative flex items-center justify-center`}
+            className={`w-full h-full bg-gradient-to-t ${locVisual.water} backdrop-blur-[2px] relative flex items-center justify-center overflow-hidden`}
           >
+            {/* Efeito Visual de Clima Ativo (Gotas de Chuva / Relâmpagos / Brilho Lunar) */}
+            {weather?.id === 'rainy' && (
+              <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
+                <div className="w-full h-full bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] animate-pulse" />
+              </div>
+            )}
+            {weather?.id === 'storm' && (
+              <div className="absolute inset-0 pointer-events-none z-0 opacity-30 bg-indigo-500/10 animate-pulse" />
+            )}
+            {weather?.id === 'mystic_moon' && (
+              <div className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-t from-violet-500/10 via-transparent to-transparent opacity-60" />
+            )}
+
             {/* Linhas de Ondulação na Água */}
             <div className="absolute inset-0 opacity-40">
               <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-400/10 via-transparent to-transparent animate-pulse" />
@@ -286,6 +350,9 @@ export const FishingStage: React.FC<FishingStageProps> = ({
 
             {/* Silhuetas de Peixes Nadando no Fundo d'Água */}
             <FishShadows locationId={currentLocation.id} isBiting={isReady} />
+
+            {/* Boias Cômicas dos Ajudantes Automatizados (Estilo Cookie Clicker) */}
+            <IdleFishersWaterVisual idleFishers={player.idleFishers || {}} />
 
             {/* Linha de Pesca SVG desenhada da vara à boia quando houver sessão */}
             {hasSession && (
@@ -387,10 +454,13 @@ export const FishingStage: React.FC<FishingStageProps> = ({
                 </div>
               ) : (
                 /* Estado Repouso (Linha recolhida) */
-                <div className="flex flex-col items-center opacity-70">
+                <div className="flex flex-col items-center opacity-85 pointer-events-none">
                   <div className="w-14 h-4 rounded-full bg-slate-900/60 blur-sm" />
-                  <span className="text-xs text-sky-200/80 font-medium tracking-wide">
-                    Águas calmas. Lance sua linha para começar a pescaria!
+                  <span className="text-xs text-sky-200/90 font-medium tracking-wide">
+                    Águas calmas. Lance sua linha ou toque na água para catar moedas!
+                  </span>
+                  <span className="text-[10px] text-amber-300 font-bold mt-1 bg-slate-950/60 px-2 py-0.5 rounded-full border border-amber-400/30">
+                    Toque na água: +{clickPower} 🪙
                   </span>
                 </div>
               )}

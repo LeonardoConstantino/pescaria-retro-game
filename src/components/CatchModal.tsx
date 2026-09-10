@@ -7,7 +7,7 @@ import { GameConfig } from '../game/data/game.config.js';
 import { GameAssetImage } from './GameAssetImage.js';
 import { HoloCard } from './HoloCard.js';
 import { vibrate } from '../utils/vibrate.js';
-import { Sparkles, Coins, ArrowRight, Package } from 'lucide-react';
+import { Sparkles, Coins, ArrowRight, Package, Waves } from 'lucide-react';
 
 interface CatchModalProps {
   isOpen: boolean;
@@ -17,6 +17,7 @@ interface CatchModalProps {
   xpEarned: number;
   onSellNow: () => void;
   estimatedPrice: number;
+  onSendToAquarium?: () => void;
 }
 
 export const CatchModal: React.FC<CatchModalProps> = ({
@@ -27,6 +28,7 @@ export const CatchModal: React.FC<CatchModalProps> = ({
   xpEarned,
   onSellNow,
   estimatedPrice,
+  onSendToAquarium,
 }) => {
   useEffect(() => {
     if (isOpen && fish) {
@@ -158,21 +160,32 @@ export const CatchModal: React.FC<CatchModalProps> = ({
         )}
 
         {/* Botões de Ação */}
-        <div className="w-full flex flex-col sm:flex-row gap-2.5">
+        <div className="w-full flex flex-col sm:flex-row gap-2">
           <button
             onClick={onClose}
-            className="flex-1 py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 border border-slate-600"
+            className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs transition-all flex items-center justify-center gap-1.5 border border-slate-600"
           >
-            <Package className="w-4 h-4 text-emerald-400" />
-            Guardar no Cesto
+            <Package className="w-3.5 h-3.5 text-emerald-400" />
+            Cesto
           </button>
+
+          {onSendToAquarium && (
+            <button
+              onClick={onSendToAquarium}
+              className="flex-1 py-2.5 px-3 rounded-xl bg-cyan-950/80 hover:bg-cyan-900/80 text-cyan-300 font-bold text-xs transition-all flex items-center justify-center gap-1.5 border border-cyan-500/40 shadow-sm"
+              title="Colocar diretamente no seu viveiro de troféus"
+            >
+              <Waves className="w-3.5 h-3.5 text-cyan-400" />
+              Ao Aquário
+            </button>
+          )}
 
           <button
             onClick={onSellNow}
-            className="flex-1 py-3 px-4 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs sm:text-sm uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20"
+            className="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-slate-950 font-black text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20"
           >
-            <Coins className="w-4 h-4 text-slate-950" />
-            Vender Agora
+            <Coins className="w-3.5 h-3.5 text-slate-950" />
+            Vender
           </button>
         </div>
       </motion.div>

@@ -6,6 +6,7 @@
 
 import { GameConfig } from '../data/game.config.js';
 import { GameFish } from '../data/fish.data.js';
+import { PlayerAquarium } from '../data/aquarium.data.js';
 
 export interface PlayerEquipment {
   rod: string;
@@ -24,6 +25,10 @@ export interface PlayerStats {
   totalCoinsSpent: number;
   largestFishWeight: number;
   largestFishName: string;
+  totalWaterClicks?: number;
+  goldenFishCaught?: number;
+  ascensionsCount?: number;
+  lifetimeCoinsEarned?: number; // moedas totais históricas acumuladas através de todos os renascimentos
 }
 
 export interface PlayerBoosts {
@@ -40,9 +45,20 @@ export interface PlayerProfile {
   currentLocation: string;
   equipment: PlayerEquipment;
   inventory: PlayerInventory;
+  idleFishers?: Record<string, number>; // id da automação -> quantidade possuída
+  idleUpgrades?: string[]; // IDs dos upgrades comprados
+  activeBuffs?: Record<string, { multiplier: number; expiresAt: number; title: string }>;
+  cosmicScales?: number; // Escamas Douradas Cósmicas disponíveis para gastar
+  claimedScalesTotal?: number; // Total de escamas já resgatadas
+  cosmicBlessings?: string[]; // IDs das bênçãos permanentes adquiridas
+  unlockedAchievements?: string[]; // IDs das conquistas desbloqueadas
   boosts: PlayerBoosts;
   stats: PlayerStats;
+  aquarium?: PlayerAquarium;
+  talents?: Record<string, number>; // id do talento -> rank investido (ex: talent_reflexes: 3)
+  bonusTalentPoints?: number; // Pontos de talento bônus ganhos por marcos especiais
   lastFishedAt: number | null;
+  lastIdleTickAt?: number;
   createdAt: number;
 }
 
@@ -72,6 +88,7 @@ export class PlayerManager {
           bait_worm: 10,
         },
       },
+      idleFishers: {},
       boosts: {},
       stats: {
         totalFishCaught: 0,
@@ -81,7 +98,21 @@ export class PlayerManager {
         largestFishWeight: 0,
         largestFishName: '',
       },
+      aquarium: {
+        level: 1,
+        currentThemeId: 'theme_freshwater',
+        ownedThemes: ['theme_freshwater'],
+        ownedDecorations: [],
+        fish: [],
+        lastFedAt: 0,
+        fedHappinessExpiresAt: 0,
+        uncollectedCoins: 0,
+        lastTickAt: Date.now(),
+      },
+      talents: {},
+      bonusTalentPoints: 0,
       lastFishedAt: null,
+      lastIdleTickAt: Date.now(),
       createdAt: Date.now(),
     };
 
@@ -92,6 +123,31 @@ export class PlayerManager {
   getPlayer(id: string): PlayerProfile | null {
     const data = this.storage.get(`player:${id}`);
     if (!data) return null;
+    if (!data.idleFishers) {
+      data.idleFishers = {};
+    }
+    if (!data.lastIdleTickAt) {
+      data.lastIdleTickAt = Date.now();
+    }
+    if (!data.aquarium) {
+      data.aquarium = {
+        level: 1,
+        currentThemeId: 'theme_freshwater',
+        ownedThemes: ['theme_freshwater'],
+        ownedDecorations: [],
+        fish: [],
+        lastFedAt: 0,
+        fedHappinessExpiresAt: 0,
+        uncollectedCoins: 0,
+        lastTickAt: Date.now(),
+      };
+    }
+    if (!data.talents) {
+      data.talents = {};
+    }
+    if (typeof data.bonusTalentPoints !== 'number') {
+      data.bonusTalentPoints = 0;
+    }
     return data;
   }
 
@@ -199,6 +255,11 @@ export class PlayerManager {
 
     this.savePlayer(player);
     return true;
+  }
+
+  addItem(player: PlayerProfile, itemId: string, quantity = 1): void {
+    player.inventory.items[itemId] = (player.inventory.items[itemId] || 0) + Math.max(1, Math.round(quantity));
+    this.savePlayer(player);
   }
 
   decrementBoosts(player: PlayerProfile): void {

@@ -57,4 +57,40 @@ export const vibrate = {
       } catch (_) {}
     }
   },
+
+  // 7. Impacto Pesado / Ascensão
+  heavy: () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([100, 50, 200]);
+      } catch (_) {}
+    }
+  },
+
+  // 8. Tensão crítica na linha (pulsos curtos de aviso)
+  lineStrain: () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([30, 40, 30]);
+      } catch (_) {}
+    }
+  },
+
+  // 9. Ruptura de linha (estalo duplo pesado)
+  lineSnap: () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([150, 80, 250]);
+      } catch (_) {}
+    }
+  },
+
+  // 10. Puxão ou arrancada do peixe
+  fishThrash: () => {
+    if (typeof navigator !== 'undefined' && typeof navigator.vibrate === 'function') {
+      try {
+        navigator.vibrate([70, 40, 90]);
+      } catch (_) {}
+    }
+  },
 };

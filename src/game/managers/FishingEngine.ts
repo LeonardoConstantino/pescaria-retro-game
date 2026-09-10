@@ -11,6 +11,7 @@ import { PlayerManager, PlayerProfile } from './PlayerManager.js';
 import { SessionManager, FishingSession } from './SessionManager.js';
 import { LocationManager } from './LocationManager.js';
 import { EventEngine } from './EventEngine.js';
+import { TalentManager } from './TalentManager.js';
 import * as Randomizer from '../utils/randomizer.js';
 import * as R from '../utils/response.builder.js';
 
@@ -36,17 +37,20 @@ export class FishingEngine {
   private sessionManager: SessionManager;
   private locationManager: LocationManager;
   private eventEngine: EventEngine;
+  private talentManager?: TalentManager;
 
   constructor(
     playerManager: PlayerManager,
     sessionManager: SessionManager,
     locationManager: LocationManager,
     eventEngine: EventEngine,
+    talentManager?: TalentManager,
   ) {
     this.playerManager = playerManager;
     this.sessionManager = sessionManager;
     this.locationManager = locationManager;
     this.eventEngine = eventEngine;
+    this.talentManager = talentManager;
   }
 
   private getItem(itemId: string | null): GameItem | null {
@@ -54,7 +58,7 @@ export class FishingEngine {
     return ItemData.find((i) => i.id === itemId) || null;
   }
 
-  castLine(chatId: string, userId: string): R.GameResponse {
+  castLine(chatId: string, userId: string, biteSpeedMultiplier = 1.0): R.GameResponse {
     const player = this.playerManager.getPlayer(userId);
     if (!player) {
       return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.', 'error_PLAYER_NOT_FOUND');
@@ -89,7 +93,14 @@ export class FishingEngine {
     if (player.boosts.cooldown) {
       cooldown += player.boosts.cooldown.value;
     }
-    cooldown = Math.max(1000, cooldown); // mínimo 1s
+    // Redução de recarga por talentos (Descanso Ágil)
+    if (this.talentManager) {
+      const cdReduc = this.talentManager.getCooldownReduction(player);
+      if (cdReduc > 0) {
+        cooldown = Math.round(cooldown * (1 - cdReduc));
+      }
+    }
+    cooldown = Math.max(800, cooldown); // mínimo 800ms
 
     if (player.lastFishedAt) {
       const elapsed = Date.now() - player.lastFishedAt;
@@ -112,9 +123,13 @@ export class FishingEngine {
       (rod?.modifiers.emptyChanceModifier || 0) +
       (bait?.modifiers.emptyChanceModifier || 0);
 
-    const eventMod =
+    let eventMod =
       (location.eventChanceModifier || 0) +
       (rod?.modifiers.eventChanceModifier || 0);
+
+    if (this.talentManager) {
+      eventMod += Math.round(this.talentManager.getEventChanceModifier(player) * 100);
+    }
 
     // Merge rarity modifiers
     const rarityMod: Record<string, number> = { ...location.rarityModifier };
@@ -128,6 +143,12 @@ export class FishingEngine {
         rarityMod[k] = (rarityMod[k] || 0) + v;
       }
     }
+    if (this.talentManager) {
+      const talentRarity = this.talentManager.getRarityBonus(player);
+      for (const [k, v] of Object.entries(talentRarity)) {
+        rarityMod[k] = (rarityMod[k] || 0) + v;
+      }
+    }
 
     // Player boost
     const playerBoost: Record<string, number> = {};
@@ -135,11 +156,29 @@ export class FishingEngine {
       playerBoost[player.boosts.rarity.rarity] = player.boosts.rarity.value;
     }
 
-    // Consome isca se houver
-    const consumedBait = this.playerManager.consumeBait(player);
+    // Consome isca se houver (com chance de conservação de isca pelo talento)
+    const baitSaveChance = this.talentManager ? this.talentManager.getBaitSaveChance(player) : 0;
+    let consumedBait = false;
+    if (player.equipment.bait) {
+      if (Math.random() >= baitSaveChance) {
+        consumedBait = this.playerManager.consumeBait(player);
+      } else {
+        consumedBait = true; // Permanece equipada sem gastar unidades do inventário
+      }
+    }
 
     // 5. Sorteios
-    const waitMs = Randomizer.rollWaitTime();
+    const rawWaitMs = Randomizer.rollWaitTime();
+    let waitMs = biteSpeedMultiplier > 1 
+      ? Math.max(1000, Math.round(rawWaitMs / biteSpeedMultiplier))
+      : rawWaitMs;
+
+    if (this.talentManager) {
+      const waitReduc = this.talentManager.getBiteWaitReduction(player);
+      if (waitReduc > 0) {
+        waitMs = Math.max(800, Math.round(waitMs * (1 - waitReduc)));
+      }
+    }
     const isEmpty = Randomizer.rollEmpty({ locationModifier: emptyMod });
     const fish = isEmpty
       ? null
@@ -229,6 +268,12 @@ export class FishingEngine {
       fish.weight = Number((fish.weight * 1.25).toFixed(2));
     }
 
+    // Bônus de peso de peixes por talentos (Fisgada Perfeita)
+    if (fish && this.talentManager) {
+      const weightMult = this.talentManager.getWeightMultiplier(player);
+      fish.weight = Number((fish.weight * weightMult).toFixed(2));
+    }
+
     // Processa evento se houver
     let eventDetails: any = null;
     let fishLost = false;
@@ -236,7 +281,12 @@ export class FishingEngine {
     if (event) {
       eventDetails = this.eventEngine.processEvent(event, player, fish);
       if (eventDetails.appliedEffects.fishLost) {
-        fishLost = true;
+        // Bênção de Netuno (Keystone): eventos negativos nunca perdem o peixe
+        if (this.talentManager?.hasKeystone(player, 'talent_poseidon_blessing')) {
+          fishLost = false;
+        } else {
+          fishLost = true;
+        }
       }
     }
 
@@ -244,6 +294,7 @@ export class FishingEngine {
     let inventoryFull = false;
     let actualCaughtFish: (GameFish & { weight: number }) | null = null;
     let actualBonusFish: (GameFish & { weight: number }) | null = null;
+    let twinLineTriggered = false;
 
     if (!empty && !fishLost && fish) {
       const addResult = this.playerManager.addFish(player, fish);
@@ -251,11 +302,33 @@ export class FishingEngine {
         actualCaughtFish = fish;
         const rodMult = rod?.modifiers.xpMultiplier || 1.0;
         xpGained += Math.round(fish.xpReward * rodMult);
+
+        // Bônus de moedas instantâneas por peixe (Faro Comercial)
+        if (this.talentManager) {
+          const instantCoins = this.talentManager.getInstantCoinReward(player);
+          if (instantCoins > 0) {
+            this.playerManager.addCoins(player, instantCoins);
+          }
+        }
+
+        // Keystone: Linha Dupla Mestre (25% de chance de fisgar um segundo peixe bônus)
+        if (this.talentManager && this.talentManager.getTwinLineChance(player) > 0) {
+          if (Math.random() < this.talentManager.getTwinLineChance(player)) {
+            const twinWeight = Number((fish.weight * (0.85 + Math.random() * 0.3)).toFixed(2));
+            const twin = { ...fish, weight: twinWeight };
+            const twinAdd = this.playerManager.addFish(player, twin);
+            if (twinAdd.added) {
+              twinLineTriggered = true;
+              actualBonusFish = twin;
+              xpGained += Math.round(twin.xpReward * rodMult);
+            }
+          }
+        }
       } else {
         inventoryFull = true;
       }
 
-      if (bonusFish && !inventoryFull) {
+      if (bonusFish && !inventoryFull && !twinLineTriggered) {
         const bonusAdd = this.playerManager.addFish(player, bonusFish);
         if (bonusAdd.added) {
           actualBonusFish = bonusFish;
@@ -264,6 +337,12 @@ export class FishingEngine {
       }
     } else if (empty && !event) {
       xpGained += 5; // XP de consolação por tentar
+    }
+
+    // Aplica multiplicador de XP por talentos (Sabedoria Ancestral)
+    if (this.talentManager && xpGained > 0) {
+      const xpMult = this.talentManager.getXpMultiplier(player);
+      xpGained = Math.round(xpGained * xpMult);
     }
 
     // Aplica XP ganho
@@ -288,7 +367,9 @@ export class FishingEngine {
     let message = '';
     if (actualCaughtFish) {
       message = `Incrível! Você fisgou um lindo ${actualCaughtFish.name} de ${actualCaughtFish.weight} kg!`;
-      if (actualBonusFish) {
+      if (twinLineTriggered && actualBonusFish) {
+        message += ` 🎣 Linha Dupla Mestre: Veio um segundo ${actualBonusFish.name} de ${actualBonusFish.weight} kg!`;
+      } else if (actualBonusFish) {
         message += ` E ainda veio um ${actualBonusFish.name} de bônus!`;
       }
     } else if (fishLost) {

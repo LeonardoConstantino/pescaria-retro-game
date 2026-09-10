@@ -14,6 +14,7 @@ import {
   Clock,
   X,
   Plus,
+  MapPin,
 } from 'lucide-react';
 
 interface ShopModalProps {
@@ -80,23 +81,45 @@ export const ShopModal: React.FC<ShopModalProps> = ({
 
         {/* Filtros */}
         <div className="flex border-b border-slate-800 px-5 pt-2 bg-slate-950/30 gap-2">
-          {(['all', 'rod', 'bait'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setFilter(tab)}
-              className={`pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold border-b-2 transition-all capitalize ${
-                filter === tab
-                  ? 'border-amber-400 text-amber-400'
-                  : 'border-transparent text-slate-400 hover:text-slate-200'
-              }`}
-            >
-              {tab === 'all' ? 'Todos os Itens' : tab === 'rod' ? 'Varas de Pesca' : 'Iscas Especiais'}
-            </button>
-          ))}
+          {(['all', 'rod', 'bait'] as const).map((tab) => {
+            const count =
+              tab === 'all'
+                ? catalog.length
+                : catalog.filter((i) => i.type === tab).length;
+            const label =
+              tab === 'all'
+                ? 'Todos os Itens'
+                : tab === 'rod'
+                ? 'Varas de Pesca'
+                : 'Iscas Especiais';
+
+            return (
+              <button
+                key={tab}
+                onClick={() => setFilter(tab)}
+                className={`pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold border-b-2 transition-all flex items-center gap-1.5 ${
+                  filter === tab
+                    ? 'border-amber-400 text-amber-400'
+                    : 'border-transparent text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <span>{label}</span>
+                <span
+                  className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono ${
+                    filter === tab
+                      ? 'bg-amber-400/20 text-amber-300'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Lista de Itens */}
-        <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3">
+        <div className="p-4 sm:p-5 overflow-y-auto flex-1 space-y-3 custom-scrollbar-amber">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {filteredItems.map((item) => {
               const isLocked = player.level < item.requiredLevel;
@@ -159,6 +182,12 @@ export const ShopModal: React.FC<ShopModalProps> = ({
                         {item.quantity && item.quantity > 1 && (
                           <span className="px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800/50 font-semibold">
                             Pacote c/ {item.quantity}x
+                          </span>
+                        )}
+                        {item.modifiers.locationBonus && item.modifiers.locationBonus.length > 0 && (
+                          <span className="px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800/50 flex items-center gap-1 font-semibold">
+                            <MapPin className="w-2.5 h-2.5" />
+                            Bônus de Local
                           </span>
                         )}
                       </div>

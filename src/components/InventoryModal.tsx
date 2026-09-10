@@ -16,6 +16,7 @@ import {
   CircleDot,
   Anchor,
   X,
+  Waves,
 } from 'lucide-react';
 
 interface InventoryModalProps {
@@ -28,6 +29,7 @@ interface InventoryModalProps {
   onEquipItem: (itemId: string) => void;
   onUnequipBait: () => void;
   calculateFishPrice: (fish: any) => number;
+  onSendToAquarium?: (inventoryId: string) => void;
 }
 
 export const InventoryModal: React.FC<InventoryModalProps> = ({
@@ -40,6 +42,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
   onEquipItem,
   onUnequipBait,
   calculateFishPrice,
+  onSendToAquarium,
 }) => {
   const [activeTab, setActiveTab] = useState<'fish' | 'gear'>('fish');
 
@@ -173,13 +176,26 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                           </div>
                         </div>
 
-                        {/* Botão Vender Individual */}
-                        <button
-                          onClick={() => onSellFish(fish.inventoryId)}
-                          className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-transform active:scale-95 flex items-center gap-1"
-                        >
-                          Vender
-                        </button>
+                        {/* Ações do Peixe: Aquário e Vender */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {onSendToAquarium && (
+                            <button
+                              onClick={() => onSendToAquarium(fish.inventoryId)}
+                              className="px-2.5 py-1.5 rounded-xl bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 text-xs font-bold transition-transform active:scale-95 flex items-center gap-1"
+                              title="Transferir para o Viveiro de Troféus"
+                            >
+                              <Waves className="w-3.5 h-3.5 text-cyan-400" />
+                              <span className="hidden sm:inline">Aquário</span>
+                            </button>
+                          )}
+
+                          <button
+                            onClick={() => onSellFish(fish.inventoryId)}
+                            className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-bold transition-transform active:scale-95 flex items-center gap-1"
+                          >
+                            Vender
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

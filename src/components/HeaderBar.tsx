@@ -223,8 +223,8 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           </button>
         </div>
 
-        {/* Lado Direito: Ações & Som */}
-        <div className="flex items-center gap-1.5 sm:gap-2">
+        {/* Lado Direito: Ações (visíveis em tablets e desktop) */}
+        <div className="hidden md:flex items-center gap-1.5 sm:gap-2">
           {/* Ajudantes / Cookie Clicker Automation */}
           <button
             onClick={onOpenIdleShop}
@@ -344,10 +344,25 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <Award className="w-4 h-4 text-yellow-400" />
           </button>
 
-          {/* Som */}
+          {/* Som (Desktop) */}
           <button
             onClick={toggleMute}
             className={`p-2 rounded-xl border transition-all hover:scale-105 active:scale-95 shadow-sm ${
+              isMuted
+                ? 'bg-red-950/30 border-red-800/50 text-red-400'
+                : 'bg-slate-800/90 border-slate-600/70 text-sky-400'
+            }`}
+            title={isMuted ? 'Ativar Efeitos Sonoros' : 'Mutar Som'}
+          >
+            {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+          </button>
+        </div>
+
+        {/* Som (Mobile Only - compacto no topo) */}
+        <div className="flex md:hidden items-center gap-1.5">
+          <button
+            onClick={toggleMute}
+            className={`p-2 rounded-xl border transition-all active:scale-95 shadow-sm ${
               isMuted
                 ? 'bg-red-950/30 border-red-800/50 text-red-400'
                 : 'bg-slate-800/90 border-slate-600/70 text-sky-400'

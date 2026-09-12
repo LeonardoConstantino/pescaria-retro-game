@@ -26,6 +26,7 @@ import { MissionsModal } from './components/MissionsModal.js';
 import { AquariumModal } from './components/AquariumModal.js';
 import { TalentModal } from './components/TalentModal.js';
 import { WeatherBanner } from './components/WeatherBanner.js';
+import { MobileBottomDock } from './components/MobileBottomDock.js';
 import { sound } from './utils/audio.js';
 import { vibrate } from './utils/vibrate.js';
 import {
@@ -239,15 +240,14 @@ export default function App() {
     return game.getClickPower(USER_ID);
   }, [player.activeBuffs, player.coins, totalCps]);
 
-  // Peixes únicos pescados (para o Bestiário)
+  // Peixes únicos pescados permanentemente (Bestiário Persistente)
+  const discoveredFishMap = useMemo(() => {
+    return game.getDiscoveredFish(USER_ID);
+  }, [player.stats.totalFishCaught, player.inventory.fish.length, player.discoveredFish]);
+
   const caughtFishIds = useMemo(() => {
-    const ids = new Set<string>();
-    player.inventory.fish.forEach((f) => ids.add(f.id));
-    if (player.stats.largestFishName) {
-      // adiciona histórico
-    }
-    return Array.from(ids);
-  }, [player.inventory.fish, player.stats.largestFishName]);
+    return Object.keys(discoveredFishMap);
+  }, [discoveredFishMap]);
 
   // Vara de pesca equipada atualmente
   const equippedRod = useMemo(() => {
@@ -613,7 +613,7 @@ export default function App() {
 
       {/* ── PALCO CENTRAL DE PESCA ── */}
       <main
-        className={`flex-1 flex flex-col justify-center items-center px-3 sm:px-4 py-4 sm:py-6 max-w-6xl w-full mx-auto relative transition-transform duration-100 ${
+        className={`flex-1 flex flex-col justify-center items-center px-3 sm:px-4 py-4 sm:py-6 pb-24 sm:pb-8 max-w-6xl w-full mx-auto relative transition-transform duration-100 ${
           isHitStop ? 'scale-[1.02] filter brightness-125' : ''
         }`}
       >
@@ -642,8 +642,8 @@ export default function App() {
           weather={currentWeather}
         />
 
-        {/* Barra de Acesso Rápido Inferior */}
-        <div className="w-full max-w-5xl mt-4 flex flex-wrap items-center justify-between gap-2 px-1 text-xs">
+        {/* Barra de Acesso Rápido Inferior (Visível apenas em Desktop/Tablets) */}
+        <div className="hidden sm:flex w-full max-w-5xl mt-4 flex-wrap items-center justify-between gap-2 px-1 text-xs">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowBestiary(true)}
@@ -739,7 +739,7 @@ export default function App() {
         onEquipItem={handleEquipItem}
         onUnequipBait={handleUnequipBait}
         calculateFishPrice={(f) =>
-          game.shopManager.calculateFishPrice(f, currentWeather?.coinsMultiplier || 1.0)
+          game.shopManager.calculateFishPrice(f, currentWeather?.coinsMultiplier || 1.0, player)
         }
         onSendToAquarium={handleSendFishToAquarium}
       />
@@ -778,6 +778,7 @@ export default function App() {
         onClose={() => setShowIdleShop(false)}
         player={player}
         totalCps={totalCps}
+        maxCpsCapacity={game.getMaxCpsCapacity(USER_ID)}
         availableUpgrades={availableUpgrades}
         onBuyTier={handleBuyIdleTier}
         onBuyUpgrade={handleBuyIdleUpgrade}
@@ -830,6 +831,7 @@ export default function App() {
         isOpen={showBestiary}
         onClose={() => setShowBestiary(false)}
         caughtFishIds={caughtFishIds}
+        discoveredFishMap={discoveredFishMap}
       />
 
       {/* Modal de Captura */}
@@ -887,6 +889,30 @@ export default function App() {
 
       {/* Números Flutuantes de Recompensa (Damage/Reward Numbers) montados no topo da árvore DOM */}
       <FloatingFeedback items={floatingItems} onDismiss={removeFloating} />
+
+      {/* ── DOCK DE NAVEGAÇÃO INFERIOR MOBILE ── */}
+      <MobileBottomDock
+        player={player}
+        currentLocation={currentLocation}
+        totalCps={totalCps}
+        unclaimedMissionsCount={unclaimedMissions}
+        availableTalentPoints={availableTalentPoints}
+        onOpenInventory={() => setShowInventory(true)}
+        onOpenShop={() => setShowShop(true)}
+        onOpenIdleShop={() => setShowIdleShop(true)}
+        onOpenPrestige={() => setShowPrestige(true)}
+        onOpenAchievements={() => setShowAchievements(true)}
+        onOpenLocations={() => setShowLocations(true)}
+        onOpenLeaderboard={() => setShowLeaderboard(true)}
+        onOpenMissions={() => setShowMissions(true)}
+        onOpenAquarium={() => setShowAquarium(true)}
+        onOpenTalents={() => setShowTalents(true)}
+        onOpenBestiary={() => setShowBestiary(true)}
+        onResetProgress={handleResetProgress}
+        onScrollToFishingStage={() => {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
     </div>
   );
 }

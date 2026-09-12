@@ -512,7 +512,7 @@ export const AquariumModal: React.FC<AquariumModalProps> = ({
             )}
 
             {/* Abas de Navegação (Fixas ao rolar o conteúdo) */}
-            <div className="sticky top-0 z-20 px-2 sm:px-5 border-y border-slate-800 bg-slate-950/95 backdrop-blur-md flex items-center gap-1.5 sm:gap-3 overflow-x-auto text-xs font-bold py-2 no-scrollbar">
+            <div className="sticky top-0 z-20 px-2 sm:px-5 border-y border-slate-800 bg-slate-950/95 backdrop-blur-md flex items-center gap-1.5 sm:gap-3 overflow-x-auto text-xs font-bold py-2">
               <button
                 onClick={() => {
                   sound.playSplash();

@@ -421,12 +421,12 @@ export const ReelTensionMeter: React.FC<ReelTensionMeterProps> = ({
   const rodBendY = 40 + (tension / 100) * 45;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/85 backdrop-blur-md select-none touch-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/85 backdrop-blur-md select-none touch-none">
       <motion.div
         initial={{ scale: 0.88, opacity: 0, y: 20 }}
         animate={{ scale: 1, opacity: 1, y: 0 }}
         exit={{ scale: 0.88, opacity: 0 }}
-        className={`relative w-full max-w-md bg-slate-900/98 rounded-3xl p-5 border-2 shadow-2xl text-center flex flex-col items-center overflow-hidden transition-colors duration-200 ${
+        className={`relative w-[95vw] sm:w-full max-w-md max-h-[90vh] overflow-y-auto bg-slate-900/98 rounded-3xl p-4 sm:p-5 border-2 shadow-2xl text-center flex flex-col items-center transition-colors duration-200 ${
           tension >= 88
             ? 'border-red-500 shadow-[0_0_50px_rgba(239,68,68,0.45)]'
             : 'border-cyan-500/50 shadow-[0_0_40px_rgba(6,182,212,0.25)]'
@@ -672,21 +672,21 @@ export const ReelTensionMeter: React.FC<ReelTensionMeterProps> = ({
                 setPlayerDirection('left');
                 checkCounterHit('left');
               }}
-              className={`py-2 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all ${
+              className={`min-h-[44px] py-2 px-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all touch-manipulation ${
                 playerDirection === 'left'
                   ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-500/30'
                   : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500 active:scale-95'
               }`}
             >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              <span>Vara Esquerda</span>
+              <ArrowLeft className="w-3.5 h-3.5 shrink-0" />
+              <span className="truncate">Esquerda</span>
             </button>
 
             {/* Vara Reta / Centro */}
             <button
               type="button"
               onClick={() => setPlayerDirection('center')}
-              className={`py-2 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all ${
+              className={`min-h-[44px] py-2 px-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all touch-manipulation ${
                 playerDirection === 'center'
                   ? 'bg-cyan-500 text-slate-950 border-cyan-300 shadow-md shadow-cyan-500/30'
                   : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500 active:scale-95'
@@ -702,14 +702,14 @@ export const ReelTensionMeter: React.FC<ReelTensionMeterProps> = ({
                 setPlayerDirection('right');
                 checkCounterHit('right');
               }}
-              className={`py-2 px-2 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all ${
+              className={`min-h-[44px] py-2 px-1.5 rounded-xl text-xs font-black flex items-center justify-center gap-1 border transition-all touch-manipulation ${
                 playerDirection === 'right'
                   ? 'bg-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-500/30'
                   : 'bg-slate-900 text-slate-300 border-slate-700 hover:border-slate-500 active:scale-95'
               }`}
             >
-              <span>Vara Direita</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span className="truncate">Direita</span>
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
             </button>
           </div>
         </div>
@@ -730,7 +730,7 @@ export const ReelTensionMeter: React.FC<ReelTensionMeterProps> = ({
               setIsReeling(false);
             }}
             disabled={isBroken || isVictory}
-            className={`w-full py-4 px-6 rounded-2xl font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-[0.98] ${
+            className={`w-full min-h-[52px] py-3.5 sm:py-4 px-4 sm:px-6 rounded-2xl font-black text-xs sm:text-sm uppercase tracking-wider flex items-center justify-center gap-2.5 transition-all shadow-xl active:scale-[0.98] touch-manipulation ${
               isReeling
                 ? 'bg-gradient-to-r from-cyan-400 via-teal-400 to-cyan-500 text-slate-950 shadow-cyan-500/50 scale-[0.99] border-2 border-white'
                 : 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-300 hover:to-yellow-300 text-slate-950 shadow-amber-500/30 border-2 border-amber-300'

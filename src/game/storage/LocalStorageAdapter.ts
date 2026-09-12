@@ -70,6 +70,21 @@ export class LocalStorageAdapter {
     return this.cache.keys();
   }
 
+  getAllData(): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const [key, value] of this.cache.entries()) {
+      result[key] = value;
+    }
+    return result;
+  }
+
+  loadAllData(data: Record<string, any>): void {
+    this.clear();
+    for (const [key, value] of Object.entries(data)) {
+      this.set(key, value);
+    }
+  }
+
   clear(): void {
     this.cache.clear();
     if (typeof window !== 'undefined' && window.localStorage) {

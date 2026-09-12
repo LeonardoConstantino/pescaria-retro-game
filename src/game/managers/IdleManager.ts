@@ -145,7 +145,16 @@ export class IdleManager {
   }
 
   /**
-   * Calcula o CPS (Coins Per Second) total do jogador considerando multiplicadores de upgrades e buffs ativos
+   * Retorna a capacidade máxima de produção passiva (CPS) suportada pela licença do nível atual do pescador
+   */
+  getMaxCpsCapacity(player: PlayerProfile): number {
+    const baseCap = Math.floor(player.level * player.level * 60);
+    const ascensionMult = 1 + (player.stats?.ascensionsCount || 0) * 0.5;
+    return Math.max(30, Math.floor(baseCap * ascensionMult));
+  }
+
+  /**
+   * Calcula o CPS (Coins Per Second) total do jogador considerando multiplicadores de upgrades, buffs ativos e teto de nível
    */
   calculateTotalCps(player: PlayerProfile): number {
     const idleFishers = player.idleFishers || {};
@@ -182,19 +191,28 @@ export class IdleManager {
     // Multiplicador por Talentos do Pescador (Rede Automatizada)
     const talentCpsMult = this.talentManager ? this.talentManager.getIdleCpsMultiplier(player) : 1.0;
 
-    return Math.round(baseCps * multiplier * ascensionBonus * achievementBonus * talentCpsMult * 10) / 10;
+    const rawCps = baseCps * multiplier * ascensionBonus * achievementBonus * talentCpsMult;
+
+    // Aplica curva amortecida de capacidade de nível para evitar inflação galopante
+    const maxCapacity = this.getMaxCpsCapacity(player);
+    let effectiveCps = rawCps;
+    if (rawCps > maxCapacity) {
+      effectiveCps = maxCapacity + Math.sqrt(rawCps - maxCapacity) * 15;
+    }
+
+    return Math.round(effectiveCps * 10) / 10;
   }
 
   /**
    * Calcula o valor de um clique manual na água/palco
-   * Fórmula: (1 moeda base + 3% do CPS total do jogador) * Multiplicadores de Upgrade * Bônus de Talento
-   * Se Click Frenzy estiver ativo: multiplica por 77x
+   * Fórmula equilibrada: (1 moeda base + nível do jogador + 1.5% do CPS) * Multiplicadores de Upgrade * Bônus de Talento
    */
   calculateClickPower(player: PlayerProfile): { coins: number; isCritical: boolean; multiplier: number } {
     const cps = this.calculateTotalCps(player);
     const upgradeMult = this.getClickPowerMultiplier(player);
     const talentClickMult = this.talentManager ? this.talentManager.getWaterClickMultiplier(player) : 1.0;
-    let baseClick = (1 + Math.floor(cps * 0.03)) * upgradeMult * talentClickMult;
+    const blessingClickMult = player.cosmicBlessings?.includes('blessing_water_surge') ? 1.35 : 1.0;
+    const baseClick = (1 + player.level + Math.floor(cps * 0.015)) * upgradeMult * talentClickMult * blessingClickMult;
 
     let buffMult = 1;
     const now = Date.now();
@@ -202,9 +220,9 @@ export class IdleManager {
       buffMult = player.activeBuffs.click_frenzy.multiplier;
     }
 
-    // Chance de 12% de clique crítico (5x)
+    // Chance de 12% de clique crítico (3x)
     const isCritical = Math.random() < 0.12;
-    const critMult = isCritical ? 5 : 1;
+    const critMult = isCritical ? 3 : 1;
 
     const totalCoins = Math.max(1, Math.floor(baseClick * buffMult * critMult));
 
@@ -233,7 +251,7 @@ export class IdleManager {
   }
 
   /**
-   * Coleta um Peixe Dourado (Golden Fish) e ativa seu efeito
+   * Coleta um Peixe Dourado (Golden Fish) e ativa seu efeito equilibrado
    */
   claimGoldenFish(player: PlayerProfile): { effect: string; title: string; description: string; instantCoins?: number } {
     if (!player.activeBuffs) {
@@ -244,39 +262,40 @@ export class IdleManager {
 
     const roll = Math.random();
     const now = Date.now();
+    const frenzyDurationMult = player.cosmicBlessings?.includes('blessing_golden_frenzy') ? 1.5 : 1.0;
 
     if (roll < 0.45) {
-      // 1. Frenesi de Produção: 7x na produção passiva por 45 segundos
-      const duration = 45 * 1000;
+      // 1. Frenesi de Produção: 3x na produção passiva por 30 segundos (ou 45s com Bênção Astral)
+      const duration = Math.round(30 * 1000 * frenzyDurationMult);
       player.activeBuffs.production_frenzy = {
-        multiplier: 7,
+        multiplier: 3,
         expiresAt: now + duration,
-        title: 'Frenesi de Pesca (7x CPS)',
+        title: 'Frenesi de Pesca (3x CPS)',
       };
       this.playerManager.savePlayer(player);
       return {
         effect: 'production_frenzy',
         title: '🔥 FRENESI DE PRODUÇÃO!',
-        description: 'Todos os ajudantes pescam a todo vapor! 7x CPS por 45 segundos.',
+        description: `Todos os ajudantes pescam acelerados! 3x CPS por ${Math.round(duration / 1000)} segundos.`,
       };
     } else if (roll < 0.80) {
-      // 2. Frenesi de Clique: 77x no poder de clique por 15 segundos
-      const duration = 15 * 1000;
+      // 2. Frenesi de Clique: 15x no poder de clique por 15 segundos (ou 22.5s com Bênção Astral)
+      const duration = Math.round(15 * 1000 * frenzyDurationMult);
       player.activeBuffs.click_frenzy = {
-        multiplier: 77,
+        multiplier: 15,
         expiresAt: now + duration,
-        title: 'Frenesi de Clique (77x Clique)',
+        title: 'Frenesi de Clique (15x Clique)',
       };
       this.playerManager.savePlayer(player);
       return {
         effect: 'click_frenzy',
         title: '⚡ FRENESI DE CLIQUE!',
-        description: 'Clique na água como um raio! Cliques valem 77x por 15 segundos.',
+        description: `Clique na água como um raio! Cliques valem 15x por ${Math.round(duration / 1000)} segundos.`,
       };
     } else {
-      // 3. Cardume Abundante: Equivalente a 15 minutos (900 segundos) de CPS instantâneo
+      // 3. Cardume Abundante: Equivalente a 60 segundos de CPS instantâneo equilibrado
       const cps = this.calculateTotalCps(player);
-      const instantCoins = Math.max(25, Math.floor(cps * 900) || 50);
+      const instantCoins = Math.max(30, Math.floor(cps * 60 * frenzyDurationMult) || 40);
       player.coins += instantCoins;
       player.stats.totalCoinsEarned += instantCoins;
       this.playerManager.savePlayer(player);
@@ -320,6 +339,13 @@ export class IdleManager {
       return R.error('TIER_NOT_FOUND', 'Ajudante de pesca não encontrado.');
     }
 
+    if (tier.requiredLevel && player.level < tier.requiredLevel) {
+      return R.error(
+        'LEVEL_TOO_LOW',
+        `Nível insuficiente. Você precisa ser Nível ${tier.requiredLevel} para contratar ${tier.name}.`,
+      );
+    }
+
     if (!player.idleFishers) {
       player.idleFishers = {};
     }
@@ -356,17 +382,27 @@ export class IdleManager {
 
   /**
    * Processa o ganho passivo de moedas baseado no tempo decorrido desde o último tick.
-   * Suporta tick contínuo de frontend e progresso offline (com teto de 4 horas para equilíbrio).
+   * Suporta tick contínuo de frontend e progresso offline com eficiência equilibrada.
    */
   processIdleTick(player: PlayerProfile, currentTimestamp: number = Date.now()): { coinsEarned: number; secondsElapsed: number } {
     const lastTick = player.lastIdleTickAt || currentTimestamp;
     const elapsedSeconds = Math.max(0, (currentTimestamp - lastTick) / 1000);
 
-    // Teto de progresso offline: máximo 4 horas (14.400 segundos)
-    const cappedSeconds = Math.min(14400, elapsedSeconds);
-
     const cps = this.calculateTotalCps(player);
-    const coinsEarned = Math.floor(cps * cappedSeconds);
+    let coinsEarned = 0;
+    let countedSeconds = 0;
+
+    if (elapsedSeconds <= 3) {
+      // Loop ativo em tempo real na aba aberta (100% de rendimento)
+      coinsEarned = Math.floor(cps * elapsedSeconds);
+      countedSeconds = elapsedSeconds;
+    } else {
+      // Progresso Offline: teto de 4 horas (ou 10 horas com Ampulheta Cósmica) e rendimento saudável de 65% (ou 100% com Vigília Noturna)
+      const maxOfflineSeconds = player.cosmicBlessings?.includes('blessing_extended_offline') ? 36000 : 14400;
+      countedSeconds = Math.min(maxOfflineSeconds, elapsedSeconds);
+      const offlineEfficiency = player.cosmicBlessings?.includes('blessing_idle_efficiency') ? 1.0 : 0.65;
+      coinsEarned = Math.floor(cps * countedSeconds * offlineEfficiency);
+    }
 
     if (coinsEarned > 0) {
       player.coins += coinsEarned;
@@ -378,7 +414,7 @@ export class IdleManager {
 
     return {
       coinsEarned,
-      secondsElapsed: cappedSeconds,
+      secondsElapsed: countedSeconds,
     };
   }
 }

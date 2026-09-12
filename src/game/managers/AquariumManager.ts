@@ -107,7 +107,10 @@ export class AquariumManager {
       ? this.talentManager.getAquariumTipsMultiplier(player)
       : 1.0;
 
-    return Number((totalBase * themeMult * decoMult * feedMult * talentMult).toFixed(2));
+    // Bônus da Bênção Cósmica Aquário dos Deuses (2x)
+    const blessingMult = player?.cosmicBlessings?.includes('blessing_aquarium_prestige') ? 2.0 : 1.0;
+
+    return Number((totalBase * themeMult * decoMult * feedMult * talentMult * blessingMult).toFixed(2));
   }
 
   // Processa o tempo decorrido e acumula gorjetas dos visitantes do aquário

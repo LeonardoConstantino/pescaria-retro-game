@@ -220,6 +220,12 @@ export class FishingGame {
     return this.idleManager.calculateTotalCps(player);
   }
 
+  getMaxCpsCapacity(userId: string): number {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return 100;
+    return this.idleManager.getMaxCpsCapacity(player);
+  }
+
   processWaterClick(userId: string): { coinsEarned: number; isCritical: boolean } {
     const player = this.playerManager.getPlayer(userId);
     if (!player) return { coinsEarned: 0, isCritical: false };
@@ -358,5 +364,104 @@ export class FishingGame {
     const player = this.playerManager.getPlayer(userId);
     if (!player) return R.error('PLAYER_NOT_FOUND', 'Jogador não encontrado');
     return this.talentManager.resetTalents(player);
+  }
+
+  getDiscoveredFish(userId: string) {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return {};
+    return this.playerManager.getDiscoveredFish(player);
+  }
+
+  getDiscoveredFishIds(userId: string): string[] {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return [];
+    return this.playerManager.getDiscoveredFishIds(player);
+  }
+
+  exportSave(userId: string): { filename: string; json: string; summary: any } {
+    const player = this.playerManager.getPlayer(userId);
+    const allData = this.storage.getAllData();
+    const timestamp = new Date().toISOString();
+    const dateStr = new Date().toISOString().slice(0, 10);
+    const sanitizedName = (player?.name || 'pescador').replace(/[^a-zA-Z0-9_-]/g, '_').toLowerCase();
+    const filename = `pescaria_save_${sanitizedName}_${dateStr}.json`;
+
+    const summary = {
+      id: player?.id || userId,
+      name: player?.name || 'Pescador',
+      level: player?.level || 1,
+      coins: player?.coins || 0,
+      fishCaught: player?.stats?.totalFishCaught || 0,
+      ascensionCount: player?.prestige?.ascensionCount || 0,
+      cosmicScales: player?.prestige?.cosmicScales || 0,
+    };
+
+    const savePayload = {
+      game: 'pescaria-retro-game',
+      version: 1,
+      exportedAt: timestamp,
+      playerSummary: summary,
+      data: allData,
+    };
+
+    return {
+      filename,
+      json: JSON.stringify(savePayload, null, 2),
+      summary,
+    };
+  }
+
+  importSave(jsonContent: string, defaultUserId: string): R.GameResponse<PlayerProfile> {
+    try {
+      const parsed = JSON.parse(jsonContent);
+      if (!parsed || typeof parsed !== 'object') {
+        return R.error('INVALID_FORMAT', 'Arquivo de backup corrompido ou formato inválido.');
+      }
+
+      let storagePayload: Record<string, any> = {};
+
+      if (parsed.data && typeof parsed.data === 'object') {
+        storagePayload = parsed.data;
+      } else if (parsed.id && parsed.level !== undefined) {
+        // Suporte a save direto de perfil de jogador legado
+        storagePayload = { [`player:${parsed.id}`]: parsed };
+      } else {
+        // Pode ser um dicionário direto de chaves
+        storagePayload = parsed;
+      }
+
+      // Procura um player válido no storagePayload
+      let foundPlayer: any = null;
+      for (const [k, v] of Object.entries(storagePayload)) {
+        if (k.startsWith('player:') && v && typeof v === 'object' && v.id) {
+          foundPlayer = v;
+          break;
+        }
+      }
+
+      if (!foundPlayer) {
+        return R.error('NO_PLAYER_FOUND', 'Nenhum perfil de pescador válido foi encontrado no arquivo.');
+      }
+
+      // Se o ID for diferente do defaultUserId, clona para o defaultUserId
+      if (foundPlayer.id !== defaultUserId) {
+        const adaptedPlayer = { ...foundPlayer, id: defaultUserId };
+        storagePayload[`player:${defaultUserId}`] = adaptedPlayer;
+      }
+
+      this.storage.loadAllData(storagePayload);
+      const restored = this.playerManager.getPlayer(defaultUserId);
+      if (!restored) {
+        return R.error('RESTORE_FAILED', 'Falha ao processar os dados do perfil.');
+      }
+
+      return R.success('save_imported', restored);
+    } catch (err: any) {
+      return R.error('PARSE_ERROR', `Erro ao decodificar JSON: ${err?.message || 'Arquivo inválido'}`);
+    }
+  }
+
+  resetAllSaveData(): void {
+    this.storage.clear();
   }
 }

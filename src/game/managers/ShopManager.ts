@@ -43,8 +43,16 @@ export class ShopManager {
       talentMult = this.talentManager.getSellPriceMultiplier(player, isHeavy);
     }
 
+    // Bônus de Espécime Troféu (peso >= 85% do máximo)
+    const isTrophy = fish.weight >= fish.maxWeight * (GameConfig.economy.trophyWeightThreshold || 0.85);
+    let trophyBonusRate = GameConfig.economy.trophyPriceBonus || 1.25;
+    if (player?.cosmicBlessings?.includes('blessing_trophy_master')) {
+      trophyBonusRate = 1.50; // +50% de valor no mercado
+    }
+    const trophyMult = isTrophy ? trophyBonusRate : 1.0;
+
     const price = Math.round(
-      fish.basePrice * mult * Math.max(0.7, weightFactor) * priceMultiplier * talentMult,
+      fish.basePrice * mult * Math.max(0.7, weightFactor) * priceMultiplier * talentMult * trophyMult,
     );
     return Math.max(1, price);
   }
@@ -159,7 +167,9 @@ export class ShopManager {
     this.playerManager.addCoins(player, price);
     const xpResult = this.playerManager.addXp(player, GameConfig.xp.perSell);
 
+    const isTrophy = fish.weight >= fish.maxWeight * (GameConfig.economy.trophyWeightThreshold || 0.85);
     const bonusText = priceMultiplier > 1 ? ` (${priceMultiplier}x bônus de clima)` : '';
+    const trophyText = isTrophy ? ' 🏆 [Troféu de Peso +25%]' : '';
 
     return R.success(
       'sell_fish',
@@ -170,9 +180,10 @@ export class ShopManager {
         leveledUp: xpResult.leveledUp,
         newLevel: xpResult.newLevel,
         currentCoins: player.coins,
+        isTrophy,
       },
       fish.assetId,
-      `Você vendeu ${fish.name} (${fish.weight} kg) por 🪙 ${price} moedas${bonusText}!`,
+      `Você vendeu ${fish.name} (${fish.weight} kg) por 🪙 ${price} moedas${bonusText}${trophyText}!`,
     );
   }
 

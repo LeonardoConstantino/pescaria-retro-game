@@ -8,8 +8,10 @@ import { PlayerManager, PlayerProfile } from './PlayerManager.js';
 import {
   COSMIC_BLESSINGS,
   CosmicBlessing,
+  MIN_ASCENSION_LEVEL,
   calculateTotalScalesForCoins,
   coinsForNextScale,
+  calculateAscensionBonusPercent,
 } from '../data/prestige.data.js';
 import * as R from '../utils/response.builder.js';
 
@@ -21,8 +23,10 @@ export interface PrestigeStatus {
   coinsNeededForNextScale: number;
   coinsProgressToNextScale: number;
   progressPercent: number;
-  totalAscensionBonusPercent: number; // +1% por escama total reclamada + bênçãos
+  totalAscensionBonusPercent: number; // Bônus percentual permanente calibrado
   ascensionsCount: number;
+  minLevelRequired: number;
+  isLevelQualified: boolean;
   blessings: {
     available: CosmicBlessing[];
     purchased: string[];
@@ -59,12 +63,8 @@ export class PrestigeManager {
     const currentProgressInSpan = Math.max(0, lifetimeCoins - prevTargetCoins);
     const progressPercent = Math.min(100, Math.max(0, Math.round((currentProgressInSpan / progressSpan) * 100)));
 
-    // Bônus percentual: 1% por escama resgatada acumulada
-    let bonusPercent = claimedScales;
     const blessings = player.cosmicBlessings || [];
-    if (blessings.includes('blessing_divine_current')) {
-      bonusPercent += 50;
-    }
+    const bonusPercent = calculateAscensionBonusPercent(claimedScales, blessings);
 
     const availableBlessings = COSMIC_BLESSINGS.filter((b) => !blessings.includes(b.id));
 
@@ -78,6 +78,8 @@ export class PrestigeManager {
       progressPercent,
       totalAscensionBonusPercent: bonusPercent,
       ascensionsCount: player.stats.ascensionsCount || 0,
+      minLevelRequired: MIN_ASCENSION_LEVEL,
+      isLevelQualified: player.level >= MIN_ASCENSION_LEVEL,
       blessings: {
         available: availableBlessings,
         purchased: blessings,
@@ -91,15 +93,22 @@ export class PrestigeManager {
    * escamas e bênçãos celestiais.
    */
   ascend(player: PlayerProfile): R.GameResponse<{ scalesAwarded: number; newTotalScales: number }> {
+    if (player.level < MIN_ASCENSION_LEVEL) {
+      return R.error(
+        'LEVEL_TOO_LOW',
+        `A Ascensão Cósmica exige no mínimo Nível ${MIN_ASCENSION_LEVEL} do Pescador para suportar a energia celestial (Seu nível: ${player.level}).`,
+      );
+    }
+
     const lifetimeCoins = (player.stats.lifetimeCoinsEarned || 0) + player.stats.totalCoinsEarned;
     const totalPotentialScales = calculateTotalScalesForCoins(lifetimeCoins);
     const claimedScales = player.claimedScalesTotal || 0;
     const pendingScales = Math.max(0, totalPotentialScales - claimedScales);
 
-    if (pendingScales <= 0 && (player.claimedScalesTotal || 0) === 0) {
+    if (pendingScales <= 0) {
       return R.error(
         'NO_SCALES_PENDING',
-        'Você ainda não acumulou moedas suficientes para receber Escamas Cósmicas (mínimo 100.000 moedas vitalícias).',
+        'Você precisa acumular mais moedas nesta vida para desbloquear pelo menos +1 nova Escama Cósmica antes de ascender.',
       );
     }
 
@@ -113,6 +122,11 @@ export class PrestigeManager {
     player.cosmicScales = (player.cosmicScales || 0) + pendingScales;
     player.claimedScalesTotal = totalPotentialScales;
 
+    // Concede ponto de talento cósmico se possuir a Coroa das Profundezas
+    if (player.cosmicBlessings?.includes('blessing_ocean_lord')) {
+      player.bonusTalentPoints = (player.bonusTalentPoints || 0) + 1;
+    }
+
     // Reseta construções e upgrades do mundo mortal para o recomeço acelerado
     player.idleFishers = {};
     player.idleUpgrades = [];
@@ -122,7 +136,7 @@ export class PrestigeManager {
     const blessings = player.cosmicBlessings || [];
     let startingCoins = 0;
     if (blessings.includes('blessing_ancestral_wealth')) {
-      startingCoins = 2500;
+      startingCoins = 1500;
     }
     player.coins = startingCoins;
 

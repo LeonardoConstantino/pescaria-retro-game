@@ -74,7 +74,7 @@ export const LocationData: GameLocation[] = [
     assetId: 'location_swamp',
     name: 'Pântano Sombrio',
     description: 'Águas turvas e musgosos entrelaçados escondendo predadores misteriosos.',
-    requiredLevel: 5,
+    requiredLevel: 6,
     fishPool: ['fish_catfish', 'fish_piranha', 'fish_arapaima'],
     rarityModifier: {
       common: -10,
@@ -94,7 +94,7 @@ export const LocationData: GameLocation[] = [
     assetId: 'location_sea',
     name: 'Mar Aberto',
     description: 'Ondas salgadas e brisa fresca. Cardumes velozes e monstros marinhos.',
-    requiredLevel: 8,
+    requiredLevel: 9,
     fishPool: [
       'fish_bass',
       'fish_snapper',
@@ -120,7 +120,7 @@ export const LocationData: GameLocation[] = [
     assetId: 'location_deep_sea',
     name: 'Abismo Profundo',
     description: 'A zona abissal onde a luz não chega. Criaturas ancestrais e lendas vivas.',
-    requiredLevel: 12,
+    requiredLevel: 13,
     fishPool: [
       'fish_tuna',
       'fish_swordfish',

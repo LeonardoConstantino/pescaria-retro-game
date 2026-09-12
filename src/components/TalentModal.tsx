@@ -215,45 +215,45 @@ export const TalentModal: React.FC<TalentModalProps> = ({
           animate={{ scale: 1, y: 0, opacity: 1 }}
           exit={{ scale: 0.95, y: 15, opacity: 0 }}
           transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-          className="w-full max-w-4xl max-h-[92vh] flex flex-col bg-slate-900/95 border border-slate-700/70 rounded-2xl shadow-2xl overflow-hidden"
+          className="w-[96vw] sm:w-full max-w-4xl max-h-[88vh] flex flex-col bg-slate-900/95 border border-slate-700/70 rounded-2xl shadow-2xl overflow-hidden"
           onClick={(e) => e.stopPropagation()}
         >
           {/* TOPO: Cabeçalho com Título, Pontos & Ações */}
-          <div className="relative px-4 sm:px-6 py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/60 flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-sky-400 p-0.5 shadow-lg shadow-sky-500/10">
+          <div className="relative px-3 sm:px-6 py-3 sm:py-4 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 border-b border-slate-700/60 flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 shrink-0">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl bg-gradient-to-tr from-amber-500 to-sky-400 p-0.5 shadow-lg shadow-sky-500/10 shrink-0">
                 <div className="w-full h-full bg-slate-900 rounded-[10px] flex items-center justify-center text-amber-300">
-                  <GraduationCap className="w-6 h-6" />
+                  <GraduationCap className="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
               </div>
               <div>
                 <div className="flex items-center gap-2">
-                  <h2 className="text-lg sm:text-xl font-bold text-white tracking-wide">
-                    Árvore de Maestria do Pescador
+                  <h2 className="text-base sm:text-xl font-bold text-white tracking-wide">
+                    Árvore de Maestria
                   </h2>
-                  <span className="hidden sm:inline-block px-2 py-0.5 text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600">
+                  <span className="px-1.5 sm:px-2 py-0.5 text-[10px] sm:text-xs font-semibold rounded bg-slate-700 text-slate-300 border border-slate-600">
                     Nv. {player?.level || 1}
                   </span>
                 </div>
-                <p className="text-xs text-slate-400">
-                  Invista pontos para forjar bônus permanentes e desbloquear habilidades especiais.
+                <p className="text-[11px] sm:text-xs text-slate-400 hidden xs:block">
+                  Invista pontos para forjar bônus permanentes e habilidades.
                 </p>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5 sm:gap-2">
               {/* Pílula de Pontos Disponíveis */}
               <div
-                className={`px-3 py-1.5 rounded-full flex items-center gap-2 text-xs sm:text-sm font-bold border transition-all ${
+                className={`px-2.5 sm:px-3 py-1.5 rounded-full flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-bold border transition-all ${
                   status.availablePoints > 0
                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-md shadow-amber-500/10 animate-pulse'
                     : 'bg-slate-800 text-slate-400 border-slate-700'
                 }`}
               >
-                <Zap className="w-4 h-4 text-amber-400" />
+                <Zap className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
                 <span>
                   {status.availablePoints}{' '}
-                  <span className="font-normal text-xs opacity-80">
+                  <span className="font-normal text-[11px] sm:text-xs opacity-80">
                     {status.availablePoints === 1 ? 'Ponto' : 'Pontos'}
                   </span>
                 </span>
@@ -265,7 +265,7 @@ export const TalentModal: React.FC<TalentModalProps> = ({
                 onClick={() => setShowResetConfirm(true)}
                 disabled={status.spentPoints === 0}
                 title="Redefinir todos os pontos de talentos"
-                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 border transition-colors ${
+                className={`px-2 sm:px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 sm:gap-1.5 border transition-colors touch-manipulation ${
                   status.spentPoints > 0
                     ? 'bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white border-slate-600'
                     : 'bg-slate-800/40 text-slate-500 border-slate-800 cursor-not-allowed'
@@ -279,7 +279,7 @@ export const TalentModal: React.FC<TalentModalProps> = ({
               <button
                 id="talent-close-button"
                 onClick={onClose}
-                className="w-8 h-8 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors ml-1"
+                className="w-10 h-10 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors ml-0.5 touch-manipulation"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -363,7 +363,7 @@ export const TalentModal: React.FC<TalentModalProps> = ({
                     sound.playWaterClick(false);
                     setActiveBranch(b.id);
                   }}
-                  className={`relative px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition-all whitespace-nowrap border-t border-x ${
+                  className={`relative px-4 py-2.5 rounded-t-xl text-xs sm:text-sm font-bold flex items-center gap-2.5 transition-all whitespace-nowrap border-t border-x touch-manipulation ${
                     isSelected
                       ? `bg-slate-900 ${b.colorTheme.border} ${b.colorTheme.text} shadow-lg`
                       : 'bg-slate-950/40 border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'

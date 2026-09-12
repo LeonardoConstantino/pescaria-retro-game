@@ -76,21 +76,23 @@ export const GameConfig = {
   // ── XP ───────────────────────────────────
   xp: {
     perFishBase: 15,
-    perSell: 8,
+    perSell: 6,
     perEvent: 20,
-    levelMultiplier: 1.6,
-    baseXpPerLevel: 80,
+    levelMultiplier: 1.55,
+    baseXpPerLevel: 110,
   },
 
   // ── Economia ─────────────────────────────
   economy: {
     sellMultiplierByRarity: {
       common: 1.0,
-      uncommon: 1.8,
-      rare: 3.5,
-      epic: 8.0,
-      legendary: 20.0,
+      uncommon: 1.6,
+      rare: 2.8,
+      epic: 5.5,
+      legendary: 12.0,
     } as Record<string, number>,
+    trophyWeightThreshold: 0.85, // Peixes com peso >= 85% do máximo ganham selo de Troféu
+    trophyPriceBonus: 1.25, // +25% no preço de venda para Troféus
   },
 
   // ── Inventário ───────────────────────────

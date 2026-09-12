@@ -36,6 +36,13 @@ export interface PlayerBoosts {
   cooldown?: { value: number; remaining: number };
 }
 
+export interface DiscoveredFishEntry {
+  count: number;
+  maxWeight: number;
+  firstCaughtAt: number;
+  lastCaughtAt?: number;
+}
+
 export interface PlayerProfile {
   id: string;
   name: string;
@@ -45,6 +52,7 @@ export interface PlayerProfile {
   currentLocation: string;
   equipment: PlayerEquipment;
   inventory: PlayerInventory;
+  discoveredFish?: Record<string, DiscoveredFishEntry>; // Registro permanente do Bestiário (não é perdido ao vender nem ao ascender)
   idleFishers?: Record<string, number>; // id da automação -> quantidade possuída
   idleUpgrades?: string[]; // IDs dos upgrades comprados
   activeBuffs?: Record<string, { multiplier: number; expiresAt: number; title: string }>;
@@ -60,6 +68,8 @@ export interface PlayerProfile {
   lastFishedAt: number | null;
   lastIdleTickAt?: number;
   createdAt: number;
+  economyRebalancedV2?: boolean;
+  ascensionRebalancedV3?: boolean;
 }
 
 export class PlayerManager {
@@ -109,6 +119,7 @@ export class PlayerManager {
         uncollectedCoins: 0,
         lastTickAt: Date.now(),
       },
+      discoveredFish: {},
       talents: {},
       bonusTalentPoints: 0,
       lastFishedAt: null,
@@ -148,6 +159,90 @@ export class PlayerManager {
     if (typeof data.bonusTalentPoints !== 'number') {
       data.bonusTalentPoints = 0;
     }
+    // Inicialização e sincronização retroativa persistente do Bestiário
+    if (!data.discoveredFish) {
+      data.discoveredFish = {};
+    }
+    // Sincroniza qualquer peixe já presente no inventário
+    if (data.inventory?.fish) {
+      for (const f of data.inventory.fish) {
+        if (!data.discoveredFish[f.id]) {
+          data.discoveredFish[f.id] = {
+            count: 1,
+            maxWeight: f.weight || f.minWeight || 1,
+            firstCaughtAt: Date.now(),
+            lastCaughtAt: Date.now(),
+          };
+        }
+      }
+    }
+    // Sincroniza qualquer peixe já presente no aquário
+    if (data.aquarium?.fish) {
+      for (const f of data.aquarium.fish) {
+        if (!data.discoveredFish[f.fishId]) {
+          data.discoveredFish[f.fishId] = {
+            count: 1,
+            maxWeight: f.weight || 1,
+            firstCaughtAt: f.caughtAt || Date.now(),
+            lastCaughtAt: f.caughtAt || Date.now(),
+          };
+        }
+      }
+    }
+    // Rebalanceamento retroativo e seguro contra o bug de hiperinflação dos ajudantes passivos
+    if (!data.economyRebalancedV2) {
+      data.economyRebalancedV2 = true;
+      const ascCount = data.stats?.ascensionsCount || 0;
+      if (data.coins > 5000000 && ascCount < 2) {
+        // Reduz para um montante farto e generoso (500.000 moedas), restaurando o desafio e a diversão
+        data.coins = 500000;
+        if (data.stats && data.stats.totalCoinsEarned > 1500000) {
+          data.stats.totalCoinsEarned = 1500000;
+        }
+      }
+      // Suaviza estoques anômalos de ajudantes de ponta
+      if (data.idleFishers) {
+        if (data.idleFishers['poseidon_shrine'] > 5) data.idleFishers['poseidon_shrine'] = 5;
+        if (data.idleFishers['trawler_ship'] > 10) data.idleFishers['trawler_ship'] = 10;
+        if (data.idleFishers['otter_brigade'] > 15) data.idleFishers['otter_brigade'] = 15;
+      }
+      this.savePlayer(data);
+    }
+
+    // Rebalanceamento retroativo da Ascensão Cósmica, Escamas e Bênçãos (V3)
+    if (!data.ascensionRebalancedV3) {
+      data.ascensionRebalancedV3 = true;
+      let shouldSave = false;
+
+      // Se o jogador possui moedas vitalícias geradas pela hiperinflação de ajudantes no passado (ex: 520 bilhões)
+      if (data.stats && (data.stats.lifetimeCoinsEarned || 0) > 3000000 && data.level < 15) {
+        const ascCount = Math.max(1, data.stats.ascensionsCount || 1);
+        // Para 3 renascimentos no início/meio de jogo, concede 6 a 8 escamas cósmicas justas e prontas para gastar
+        const fairScales = Math.min(15, Math.max(4, ascCount * 2));
+        data.stats.lifetimeCoinsEarned = 660000;
+        data.claimedScalesTotal = fairScales;
+        data.cosmicScales = fairScales;
+        // Reseta as bênçãos para que o jogador tenha o prazer de escolher e comprar no novo catálogo expandido
+        data.cosmicBlessings = [];
+        shouldSave = true;
+      } else if (data.cosmicScales && data.cosmicScales > 100 && data.level < 15) {
+        data.claimedScalesTotal = 6;
+        data.cosmicScales = 6;
+        data.cosmicBlessings = [];
+        shouldSave = true;
+      }
+
+      // Normaliza moedas do cofrinho do aquário caso tenham acumulado milhões pelo tick antigo
+      if (data.aquarium && data.aquarium.uncollectedCoins > 15000) {
+        data.aquarium.uncollectedCoins = 2500;
+        shouldSave = true;
+      }
+
+      if (shouldSave) {
+        this.savePlayer(data);
+      }
+    }
+
     return data;
   }
 
@@ -199,7 +294,36 @@ export class PlayerManager {
     return { leveledUp, oldLevel, newLevel };
   }
 
+  /**
+   * Registra uma espécie no Bestiário de forma permanente (não é perdido ao vender nem ascender).
+   */
+  discoverFish(player: PlayerProfile, fish: GameFish & { weight?: number }): void {
+    if (!player.discoveredFish) {
+      player.discoveredFish = {};
+    }
+    const weight = fish.weight || fish.minWeight || 1;
+    const existing = player.discoveredFish[fish.id];
+    if (existing) {
+      existing.count += 1;
+      existing.lastCaughtAt = Date.now();
+      if (weight > existing.maxWeight) {
+        existing.maxWeight = Number(weight.toFixed(2));
+      }
+    } else {
+      player.discoveredFish[fish.id] = {
+        count: 1,
+        maxWeight: Number(weight.toFixed(2)),
+        firstCaughtAt: Date.now(),
+        lastCaughtAt: Date.now(),
+      };
+    }
+    this.savePlayer(player);
+  }
+
   addFish(player: PlayerProfile, fish: GameFish & { weight: number }): { added: boolean; reason?: string } {
+    // Registra permanentemente no Bestiário independente de caber ou não no inventário
+    this.discoverFish(player, fish);
+
     if (player.inventory.fish.length >= GameConfig.inventory.maxSlots) {
       return { added: false, reason: 'INVENTORY_FULL' };
     }
@@ -216,6 +340,14 @@ export class PlayerManager {
 
     this.savePlayer(player);
     return { added: true };
+  }
+
+  getDiscoveredFish(player: PlayerProfile): Record<string, DiscoveredFishEntry> {
+    return player.discoveredFish || {};
+  }
+
+  getDiscoveredFishIds(player: PlayerProfile): string[] {
+    return Object.keys(player.discoveredFish || {});
   }
 
   removeFish(player: PlayerProfile, inventoryId: string): boolean {

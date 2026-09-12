@@ -307,7 +307,7 @@ export const FishingStage: React.FC<FishingStageProps> = ({
 
         {/* ── ÁGUA & BOIA INTERATIVA ── */}
         <div
-          className="absolute inset-x-0 bottom-0 h-44 sm:h-52 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950 cursor-pointer select-none"
+          className="absolute inset-x-0 bottom-0 h-44 sm:h-52 bg-gradient-to-b from-transparent via-slate-950/40 to-slate-950 cursor-pointer select-none touch-manipulation"
           onClick={(e) => {
             // Se o peixe estiver mordendo, não trata como clique comum de água
             if (isReady) {
@@ -318,13 +318,21 @@ export const FishingStage: React.FC<FishingStageProps> = ({
           }}
           title={isReady ? 'Clique para recolher!' : `Toque na água para fisgar moedas (+${clickPower} 🪙)`}
         >
-          {/* Spawner do Peixe Dourado (Golden Fish) */}
-          {onCatchGoldenFish && (
-            <GoldenFishSpawner
-              onCatchGoldenFish={onCatchGoldenFish}
-              chanceMultiplier={weather?.goldenFishChanceMult || 1.0}
-            />
-          )}
+          {/* Spawner do Peixe Dourado (Golden Fish) com bônus de Clima, Bênçãos e Talentos */}
+          {onCatchGoldenFish && (() => {
+            const blessingGoldenMult = player.cosmicBlessings?.includes('blessing_golden_magnet') ? 1.35 : 1.0;
+            const talentGoldenMult = (player.talents?.['talent_poseidon_blessing'] || 0) > 0 ? 2.0 : 1.0;
+            const weatherGoldenMult = weather?.goldenFishChanceMult || 1.0;
+            const totalGoldenChanceMult = weatherGoldenMult * blessingGoldenMult * talentGoldenMult;
+
+            return (
+              <GoldenFishSpawner
+                onCatchGoldenFish={onCatchGoldenFish}
+                chanceMultiplier={totalGoldenChanceMult}
+                isMysticMoon={weather?.id === 'mystic_moon'}
+              />
+            );
+          })()}
 
           {/* Superfície da Água com Ondas */}
           <div
@@ -508,7 +516,7 @@ export const FishingStage: React.FC<FishingStageProps> = ({
               whileTap={{ scale: 0.96 }}
               disabled={isCollecting}
               onClick={onCollect}
-              className={`w-full sm:w-64 py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 ${
+              className={`w-full sm:w-64 min-h-[50px] py-3 px-6 rounded-2xl font-black text-sm sm:text-base tracking-wider uppercase transition-all shadow-xl flex items-center justify-center gap-2 touch-manipulation ${
                 isReady
                   ? 'bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 text-slate-950 shadow-amber-500/40 ring-4 ring-amber-400/50 animate-pulse'
                   : 'bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-600'
@@ -533,7 +541,7 @@ export const FishingStage: React.FC<FishingStageProps> = ({
               whileTap={{ scale: 0.96 }}
               disabled={isCasting}
               onClick={onCast}
-              className="w-full sm:w-64 py-3.5 px-6 rounded-2xl font-black text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2"
+              className="w-full sm:w-64 min-h-[50px] py-3 px-6 rounded-2xl font-black text-sm sm:text-base tracking-wider uppercase bg-gradient-to-r from-sky-500 via-teal-500 to-emerald-500 hover:from-sky-400 hover:to-emerald-400 text-slate-950 shadow-lg shadow-sky-500/25 transition-all flex items-center justify-center gap-2 touch-manipulation"
             >
               <Anchor className="w-5 h-5 text-slate-950" />
               LANÇAR LINHA

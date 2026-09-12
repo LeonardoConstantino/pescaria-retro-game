@@ -63,24 +63,24 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
     .filter(Boolean) as (GameItem & { ownedQty: number })[];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-md">
       <motion.div
         initial={{ scale: 0.92, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.92, opacity: 0 }}
-        className="relative w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]"
+        className="relative w-[96vw] sm:w-full max-w-3xl bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]"
       >
         {/* Cabeçalho do Modal */}
-        <div className="p-4 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center">
+        <div className="p-3 sm:p-5 border-b border-slate-800 flex items-center justify-between bg-slate-950/70 shrink-0">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center shrink-0">
               <Package className="w-5 h-5 text-emerald-400" />
             </div>
             <div>
-              <h2 className="text-lg font-bold text-slate-100 flex items-center gap-2">
+              <h2 className="text-base sm:text-lg font-bold text-slate-100 flex items-center gap-2">
                 Mochila & Cesto de Pesca
               </h2>
-              <p className="text-xs text-slate-400">
+              <p className="text-[11px] sm:text-xs text-slate-400">
                 Capacidade: {fishList.length}/{maxSlots} peixes guardados
               </p>
             </div>
@@ -88,17 +88,17 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
 
           <button
             onClick={onClose}
-            className="w-8 h-8 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors"
+            className="w-10 h-10 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 flex items-center justify-center transition-colors touch-manipulation"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Abas */}
-        <div className="flex border-b border-slate-800 px-5 pt-2 bg-slate-950/30 gap-2">
+        <div className="flex border-b border-slate-800 px-3 sm:px-5 pt-2 bg-slate-950/30 gap-1.5 sm:gap-2 overflow-x-auto shrink-0">
           <button
             onClick={() => setActiveTab('fish')}
-            className={`pb-2.5 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 border-b-2 whitespace-nowrap transition-all touch-manipulation ${
               activeTab === 'fish'
                 ? 'border-emerald-400 text-emerald-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -110,7 +110,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
 
           <button
             onClick={() => setActiveTab('gear')}
-            className={`pb-2.5 px-4 text-xs sm:text-sm font-bold flex items-center gap-2 border-b-2 transition-all ${
+            className={`pb-2.5 px-3 sm:px-4 text-xs sm:text-sm font-bold flex items-center gap-1.5 sm:gap-2 border-b-2 whitespace-nowrap transition-all touch-manipulation ${
               activeTab === 'gear'
                 ? 'border-amber-400 text-amber-400'
                 : 'border-transparent text-slate-400 hover:text-slate-200'
@@ -140,11 +140,14 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                   {fishList.map((fish) => {
                     const price = calculateFishPrice(fish);
                     const rarityConfig = GameConfig.rarity[fish.rarity] || GameConfig.rarity.common;
+                    const isTrophy = fish.maxWeight && fish.weight >= fish.maxWeight * (GameConfig.economy.trophyWeightThreshold || 0.85);
 
                     return (
                       <div
                         key={fish.inventoryId}
-                        className={`p-3 rounded-2xl border ${rarityConfig.borderColor} bg-slate-950/60 flex items-center justify-between gap-3 hover:bg-slate-950/90 transition-all`}
+                        className={`p-3 rounded-2xl border ${rarityConfig.borderColor} ${
+                          isTrophy ? 'bg-amber-950/20 border-amber-500/40 ring-1 ring-amber-500/20' : 'bg-slate-950/60'
+                        } flex items-center justify-between gap-3 hover:bg-slate-950/90 transition-all`}
                       >
                         <div className="flex items-center gap-3">
                           <GameAssetImage
@@ -154,7 +157,7 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                             size="md"
                           />
                           <div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <span className="font-bold text-sm text-slate-100">{fish.name}</span>
                               <span
                                 className="text-[10px] font-bold px-1.5 py-0.2 rounded-md border"
@@ -166,6 +169,11 @@ export const InventoryModal: React.FC<InventoryModalProps> = ({
                               >
                                 {rarityConfig.label}
                               </span>
+                              {isTrophy && (
+                                <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-md border border-amber-400/40 bg-amber-500/20 text-amber-300">
+                                  🏆 Troféu (+25%)
+                                </span>
+                              )}
                             </div>
                             <p className="text-xs text-slate-400 mt-0.5 font-medium">
                               ⚖️ {fish.weight} kg

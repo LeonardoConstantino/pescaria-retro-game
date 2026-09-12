@@ -1,6 +1,6 @@
 # 🎣 Jogo de Pesca (Fishing Game)
 
-Um web app moderno, interativo e imersivo de pescaria e progressão incremental. Combina a jogabilidade ativa de pesca de precisão (*arcade/minigame*) com sistemas aprofundados de RPG (*skill tree* de maestria, biomas desbloqueáveis, catálogo de espécies) e mecânicas viciantes de automação (*idle clicker*, aquário vivo gerador de renda, clima em tempo real e renascimento cósmico).
+Um web app moderno, interativo e imersivo de pescaria e progressão incremental. Combina a jogabilidade ativa de pesca de precisão (*arcade/minigame*) com sistemas aprofundados de RPG (*skill tree* de maestria, biomas desbloqueáveis, catálogo enciclopédico de espécies) e mecânicas ricas de automação (*idle clicker*, aquário vivo gerador de renda, clima em tempo real, peixe dourado lendário e renascimento cósmico).
 
 [![Jogue Agora](https://img.shields.io/badge/▶_Jogue_Online-Live_Demo-emerald?style=for-the-badge&logo=google-chrome)](https://leonardoconstantino.github.io/pescaria-retro-game/)
 ![React](https://img.shields.io/badge/React-18-blue?style=for-the-badge&logo=react)
@@ -13,109 +13,195 @@ Um web app moderno, interativo e imersivo de pescaria e progressão incremental.
 
 ---
 
-## 🌟 Principais Sistemas & Funcionalidades
+## 🌟 Principais Sistemas & Mecânicas de Jogo
 
-### 1. 🎮 Mecânica de Pesca & Game Feel ("Juice")
-- **Lançamento e Fisgada Realista**: Boia com física flutuante, cálculo de tensão de linha por curva Bézier em SVG e contagem de espera dinâmica.
-- **Cardume Subaquático**: Sombras de peixes nadando nas profundezas com inteligência procedural e reação ao afundar da boia.
-- **Minigame de Tensão (Quick-Time Event)**: Ao puxar o anzol, um medidor de precisão surge. Acertar a **Zona Dourada** recompensa o pescador com bônus de peso (+25%), XP ampliado e fanfarra especial.
-- **Feedback Tátil (Vibration API)**: Vibração rítmica na mordida da boia, no acerto perfeito do medidor e em capturas Épicas/Lendárias.
-- **Áudio Sintetizado via Web Audio API**: Efeitos sonoros gerados por código (sem arquivos externos pesados): arremesso, estalo da linha, carretel, salpicos d'água, fanfarras e tilintar de moedas.
-- **Cartas Holográficas 3D (HoloCard)**: Efeito 3D Tilt interativo com reflexos furta-cor e arco-íris para peixes raros e lendários.
+### 1. 🎮 Pesca Ativa & Game Feel ("Juice")
+- **Lançamento e Física Realista**: Boia com flutuação orgânica na água, cálculo de tensão de linha por curva Bézier em SVG e contagem de espera dinâmica.
+- **Cardume Subaquático Procedural**: Sombras de peixes nadando nas profundezas (`FishShadows.tsx`) com inteligência procedural que reagem e se aproximam da boia.
+- **Minigame de Tensão & Zona Dourada (`ReelTensionMeter.tsx`)**: Ao puxar o anzol, um medidor de tensão com zona alvo dinâmica é ativado. Acertar a **Zona Dourada** recompensa com:
+  - Bônus imediato de peso no peixe (+25%).
+  - Ganho de XP ampliado (+50%).
+  - Animação comemorativa e fanfarra especial.
+- **Feedback Tátil Háptico (Navigator Vibration API)**: Padrões de vibração personalizados para mordidas na boia, acertos perfeitos de puxada e captura de espécimes Raros, Épicos e Lendários.
+- **Síntese de Áudio via Web Audio API**: Efeitos sonoros gerados por código em tempo real (sem arquivos de áudio externos): arremesso da vara, estalo da linha, carretel, salpicos d'água, tilintar de moedas e acordes celestiais.
+- **Cartas Holográficas 3D (`HoloCard.tsx`)**: Efeito 3D Tilt interativo com reflexos furta-cor e brilho dinâmico baseado no cursor para exibir os peixes capturados.
 
 ---
 
 ### 2. 🌲 Árvore de Maestria & Talentos do Pescador
-Sistema de progressão por árvore de habilidades desbloqueado por níveis e pontos de maestria:
-- 🎣 **Pescador de Elite (*Angler*)**: Reduz o tempo de espera da mordida, aumenta o peso dos peixes, melhora chances de espécimes Raros/Lendários e concede a habilidade Keystone *Linha Dupla Mestre* (captura dois peixes simultâneos).
-- 🪙 **Magnata dos Mares (*Tycoon*)**: Aumenta o valor de venda no mercado, concede chance de economizar iscas, concede descontos em varas e desbloqueia a Keystone *Monopólio dos Mares* (+100% de valor em troféus).
-- 🔮 **Oceanógrafo Místico (*Mystic*)**: Multiplica o ganho de XP, aumenta o poder do clique na água, acelera ajudantes automatizados e concede a Keystone *Bênção de Netuno* (imunidade a perdas por eventos negativos e frequência dobrada de peixes dourados).
+A cada nível alcançado, o jogador conquista **Pontos de Maestria** para especializar sua jornada em 3 ramos de evolução (`TalentModal.tsx`), totalizando 18 talentos e 3 habilidades Keystones supremas:
+
+| Ramo | Foco | Destaques | Habilidade Keystone (Tier 4) |
+| :--- | :--- | :--- | :--- |
+| 🎣 **Pescador de Elite (*Angler*)** | Arremesso ativo e peixes gigantes | Redução do tempo de mordida, aumento de peso médio, bônus de espécies raras e captura de espécimes gigantes. | **Linha Dupla Mestre**: Concede chance de fisgar dois peixes em um único arremesso com anzol duplo. |
+| 🪙 **Magnata dos Mares (*Tycoon*)** | Economia, comércio e lucros | Maior valor de venda no mercado, desconto em compras de varas e economia automática de iscas valiosas. | **Monopólio dos Mares**: Concede +100% de valor extra na venda de peixes de troféu. |
+| 🔮 **Oceanógrafo Místico (*Mystic*)** | Automação, cliques e eventos raros | Multiplicador de XP, poder de clique na água, aceleração dos ajudantes passivos e bônus de clima. | **Bênção de Netuno**: Imunidade a perdas por tempestades e duplica a frequência de aparição do Peixe Dourado. |
 
 ---
 
 ### 3. 🐠 Aquário & Viveiro de Troféus Interativo
-- **Exposição Viva**: Peixes capturados nadam em um aquário animado com física orgânica e colisões suaves.
-- **Renda Passiva de Visitantes**: Visitantes pagam gorjetas para admirar espécies raras e troféus bem alimentados.
-- **Alimentação & Felicidade**: Alimentar os peixes ativa o estado de *Êxtase*, dobrando a receita por hora.
-- **Temas & Decorações**: Ambientes customizáveis (Água Doce, Recife de Coral, Abismo Bioluminescente) com plantas, ruínas submersas e castelos que multiplicam os ganhos.
+Um ecossistema aquático vivo onde o jogador pode preservar suas melhores capturas e lucrar com visitações (`AquariumModal.tsx` e `AquariumCanvas.tsx`):
+- **Exposição Viva em Canvas 2D**: Os peixes transferidos do inventário nadam no aquário com velocidade proporcional ao seu peso e física orgânica de nado.
+- **Renda Passiva de Visitantes**: Visitantes do aquário pagam gorjetas automáticas por segundo de acordo com a raridade e o peso dos peixes em exibição.
+- **Alimentação & Estado de Êxtase**: Alimentar os peixes eleva a saciedade da fauna aquática, ativando o estado de **Êxtase Aquático**, que dobra a receita de moedas por hora.
+- **Temas & Cenários**: Ambientes desbloqueáveis como *Água Doce*, *Recife de Coral* e *Abismo Bioluminescente*.
+- **Decorações Mágicas**: Plantas raras, baús de tesouro submersos e ruínas antigas que aplicam multiplicadores globais na atração de público.
 
 ---
 
 ### 4. ⚓ Tripulação Automatizada & Ganhos Passivos (Idle Fishers)
-- **Ajudantes de Pesca (Estilo Cookie Clicker)**:
-  - Varas de Bambu fixadas na margem.
-  - Gatos Pescadores Concursados.
-  - Seu Zé Aposentado com Radinho AM.
-  - Canoas com redes de arrasto furtivas.
-  - Brigadas de Ariranhas Táticas.
-  - Traineiras Pesqueiras Industriais.
-  - Santuários Místicos de Poseidon & Netuno.
-- **Visual na Água**: Boias e embarcações aparecem balançando em tempo real no cenário do lago.
-- **Ganhos Offline**: Acumule moedas mesmo com o navegador fechado (com limites expansíveis).
+Sistema de automação estilo *Cookie Clicker* com geração contínua de Moedas por Segundo (CPS):
+- **Ajudantes Contratáveis**:
+  - 🎋 **Varas de Bambu na Margem**: Pescaria autônoma básica.
+  - 🐱 **Gato Pescador Concursado**: Felinos ágeis com bônus de clique.
+  - 📻 **Seu Zé Aposentado**: Experiência ribeirinha com radinho AM.
+  - 🛶 **Canoa de Arrasto Noturno**: Coleta em rede nas margens.
+  - 🦦 **Brigada de Ariranhas Táticas**: Pesca em bando veloz e implacável.
+  - 🚢 **Traineira Pesqueira Industrial**: Produção em massa de alto-mar.
+  - 🔱 **Santuário de Poseidon**: Bênçãos cósmicas de captura contínua.
+- **Visualização Viva na Água (`IdleFishersWaterVisual.tsx`)**: Boias, barcos e ajudantes aparecem flutuando ativamente no cenário enquanto trabalham.
+- **Ganhos Offline Seguros**: Acúmulo de recursos mesmo com o jogo fechado, com limite expansível via bênçãos cósmicas.
 
 ---
 
-### 5. 🌌 Renascimento Cósmico & Prestígio (Escamas Douradas)
-- Reinicie o progresso básico em troca de **Escamas Cósmicas Douradas**.
-- Cada escama acumulada concede **+1% de bônus permanente** de produção e clique.
-- Compre **Bênçãos Cósmicas Permanentes**:
-  - *Ímã de Peixes Dourados*: Aumenta o spawn de eventos cósmicos.
-  - *Herança do Pescador Ancião*: Comece cada renascimento com fundos iniciais garantidos.
-  - *Sorte Astral Oceânica*: Bônus permanente para encontrar peixes raros e lendários.
-  - *Ampulheta Cósmica*: Expande o teto de ganhos offline de 4 para até 12 horas.
-  - *Correnteza Divina de Poseidon*: +50% adicional em toda a economia.
+### 5. ✨ Peixe Dourado (*Golden Fish*) — O "Golden Cookie" dos Mares
+Um evento celestial espontâneo e recompensador (`GoldenFishSpawner.tsx`):
+- **Visual Lendário Estilizado**: Silhueta vetorial orgânica em SVG de peixe dourado com natação ondulatória, gradiente metálico, cauda articulada, halos de ondas d'água e centelhas estelares.
+- **Raridade Equilibrada**:
+  - *Modo Base*: surge a cada **110s a 200s** (~1.8 a 3.3 minutos).
+  - *Com Bênção de Netuno ou Ímã Dourado*: surge a cada **65s a 115s**.
+  - *Na Lua Mística*: aparição especial a cada **40s a 70s**.
+- **Desaparecimento Instantâneo**: Ao ser clicado pelo pescador, desaparece imediatamente em uma celebração com confetes dourados, áudio orquestrado e vibração.
+- **Efeitos de Frenesi Cósmico**:
+  - 🌟 **Frenesi de Produção**: 7x mais CPS durante 77 segundos.
+  - ⚡ **Frenesi de Clique**: 77x mais moedas por clique na água.
+  - 💰 **Cardume de Ouro**: Chuva torrencial instantânea de moedas.
 
 ---
 
-### 6. ✨ O "Golden Cookie" dos Mares: Peixe Dourado Saltador
-- Peixe lendário místico que salta periodicamente e cruza as águas por tempo limitado.
-- Ao ser clicado a tempo, ativa efeitos especiais imediatos:
-  - **Frenesi de Produção (7x CPS por 77 segundos)**.
-  - **Frenesi de Clique (77x no clique da água)**.
-  - **Cardume Instantâneo** com chuva imediata de moedas e confetes.
+### 6. 🌌 Renascimento Cósmico & Prestígio (Ascensão)
+Quando a pescaria atinge patamares elevados, o pescador pode ascender e recomeçar sua jornada com poderes divinos (`PrestigeModal.tsx`):
+- **Requisito Mínimo**: Nível 10 do pescador.
+- **Escamas Cósmicas Douradas**: Moeda divina calculada pelo total de moedas acumuladas ao longo de toda a história do pescador.
+- **Bônus Permanente**: Cada Escama Cósmica confere **+1% permanente** de produção de moedas e poder de clique.
+- **Tiers de Bênçãos Cósmicas**:
+  - **Tier 1 — Iniciação Celestial**: *Ímã Astral de Peixes Dourados*, *Herança do Pescador Ancião* (moedas iniciais no renascimento), *Ressonância das Marés* (clique ampliado).
+  - **Tier 2 — Maestria dos Mares Cósmicos**: *Sorte Astral Oceânica* (chances de raros/lendários), *Ampulheta Cósmica* (expansão do teto offline de 4h para até 12h), *Sintonia de Cardumes*.
+  - **Tier 3 — Apoteose Oceânica**: *Correnteza Divina de Poseidon* (+50% CPS global permanente) e *Alquimia dos Troféus*.
+- **Proteção de Sanidade Cósmica**: Algoritmo de validação que previne corrupção de dados ou inflações anômalas em saves de versões anteriores.
 
 ---
 
 ### 7. ⛅ Clima Dinâmico em Tempo Real
-- Ciclos climáticos dinâmicos com impactos diretos nas mecânicas:
-  - ☀️ **Ensolarado**: Pescaria serena com peixes mais dóceis.
-  - 🌧️ **Chuva Suave**: Aumenta a velocidade de mordida da boia em 25%.
-  - ⛈️ **Tempestade Elétrica**: +50% de ganho de XP e aparição de peixes energéticos.
-  - 🌫️ **Neblina Mística**: Aumenta as chances de espécies raras e estranhas.
-  - 🌙 **Lua Mística**: Peixes Dourados saltam com frequência 3x maior!
+O clima afeta o ambiente visual e os parâmetros de pescaria (`WeatherBanner.tsx` e `weather.data.ts`):
+
+| Clima | Modificador de Mordida | Chance de Raros | Bônus de XP | Efeito Especial |
+| :--- | :---: | :---: | :---: | :--- |
+| ☀️ **Ensolarado** | Normal (1.0x) | Normal | 1.0x | Águas calmas e visibilidade cristalina. |
+| 🌧️ **Chuva Suave** | +25% mais rápido | +10% | 1.1x | Peixes saem da profundeza para buscar oxigênio. |
+| ⛈️ **Tempestade Elétrica** | +40% mais rápido | +25% | **1.5x** | Raios no horizonte e peixes elétricos ativos. |
+| 🌫️ **Neblina Mística** | Normal | **+50%** | 1.2x | Silhuetas misteriosas emergem do fundo. |
+| 🌙 **Lua Mística** | +15% mais rápido | +35% | 1.3x | **Peixe Dourado surge até 3x mais rápido!** |
 
 ---
 
-### 8. 📜 Missões Diárias, Conquistas & Ranking
-- **Missões Diárias**: 3 objetivos renovados a cada dia (capturas por bioma, uso de iscas, ganho de moedas) com recompensas valiosas.
-- **Catálogo de Conquistas**: Mais de 30 marcos desbloqueáveis com títulos honorários e moedas bônus.
-- **Ranking Global & Local**: Quadro de líderes destacando os maiores mestres pescadores e maiores espécimes registrados.
+### 8. 📜 Missões Diárias, Conquistas & Leaderboard
+- **Missões Diárias (`MissionsModal.tsx`)**: 3 tarefas diárias sorteadas a cada meia-noite (pescar espécies em biomas específicos, usar iscas especiais, acumular moedas) que garantem recompensas generosas.
+- **Galeria de Conquistas (`AchievementsModal.tsx`)**: Mais de 30 marcos que desafiam o pescador (primeiro lendário, mestre dos biomas, aquarista experiente, etc.).
+- **Quadro de Líderes (`LeaderboardModal.tsx`)**: Histórico dos maiores registros de peso, número de capturas e recordes da comunidade.
 
 ---
 
 ## 🌊 Locais de Pesca & Biomas
 
-| Bioma | Nível Mínimo | Atmosfera & Destaque |
+| Bioma | Nível Mínimo | Atmosfera & Espécies de Destaque |
 | :--- | :---: | :--- |
-| 🏞️ **Lago Tranquilo** | Nv. 1 | Águas mansas, perfeito para lambaris, tilápias e carpas. |
-| 🌊 **Rio Correntoso** | Nv. 3 | Correntezas rápidas com dourados valentes e trutas arco-íris. |
-| 🐊 **Pântano Misterioso** | Nv. 5 | Águas turvas com peixes-elétricos, piranhas e segredos. |
-| 🚢 **Mar Aberto** | Nv. 8 | Alto-mar com atuns gigantes, tubarões e peixes-espada. |
-| 🌌 **Abismo Oceânico** | Nv. 12 | Profundezas bioluminescentes com celacantos, peixes-lanterna e o mítico *Kraken Bebê*. |
+| 🏞️ **Lago Tranquilo** | Nv. 1 | Águas mansas e límpidas. Lar do Lambari, Tilápia, Carpa e o mítico Dourado do Lago. |
+| 🌊 **Rio Correntoso** | Nv. 3 | Corredeiras rápidas com cascalho. Abriga Trutas Arco-Íris, Pacus e Dourados Valentes. |
+| 🐊 **Pântano Misterioso** | Nv. 5 | Águas escuras entre raízes de mangue. Lar de Bagres gigantes, Piranhas e Peixes-Elétricos. |
+| 🚢 **Mar Aberto** | Nv. 8 | Ondas salgadas profundas. Habitat de Atuns Azuis, Peixes-Espada e Tubarões Martelo. |
+| 🌌 **Abismo Oceânico** | Nv. 12 | Zona afótica com bioluminescência. Guarda Celacantos, Peixes-Lanterna e o Lendário *Kraken Bebê*. |
 
 ---
 
-## 🛠️ Tecnologias Utilizadas
+## 🛠️ Tecnologias & Arquitetura
 
-- **React 18** — Componentização funcional, hooks personalizados e estado orquestrado.
-- **TypeScript 5** — Tipagem estática rigorosa para motores de regras, peixes, eventos e talentos.
-- **Tailwind CSS 4** — Estilização de alta performance com classes utilitárias e paletas temáticas.
-- **Motion (Framer Motion)** — Física fluida de animações, modais reativos e feedback elástico.
-- **Web Audio API** — Síntese acústica processual em tempo real sem dependências externas de som.
-- **Navigator Vibration API** — Resposta tátil háptica para dispositivos móveis.
-- **Lucide React** — Biblioteca consistente de ícones vetoriais.
-- **Canvas Confetti** — Efeitos comemorativos para conquistas e capturas raras.
-- **Vite 6** — Ambiente de compilação e bundler moderno.
+- **React 18** — Interface componentizada moderna, hooks customizados e renderização declarativa.
+- **TypeScript 5** — Tipagem estática rigorosa para motores de regras, modelos matemáticos e persistência.
+- **Tailwind CSS 4** — Design responsivo, fluido e estilização utility-first de alta performance.
+- **Motion (`motion/react`)** — Animações fluidas de nado, transições elásticas de modais e partículas.
+- **Web Audio API** — Motor de som processual sintetizado em código puro (zero dependência de mp3 externos).
+- **Navigator Vibration API** — Resposta tátil háptica para mordidas e eventos no mobile.
+- **Canvas Confetti** — Chuva de partículas comemorativas para conquistas e o Peixe Dourado.
+- **Vite 6** — Compilação ultrarrápida e Hot Module Replacement otimizado.
+
+---
+
+## 📦 Estrutura do Código
+
+```text
+├── public/
+│   └── assets/                     # Sprites e ilustrações temáticas
+├── src/
+│   ├── components/                 # Componentes React de UI e Modais
+│   │   ├── AchievementsModal.tsx   # Galeria de conquistas e marcos
+│   │   ├── AquariumCanvas.tsx      # Renderizador em Canvas 2D da vida no aquário
+│   │   ├── AquariumModal.tsx       # Gestão do viveiro, alimentação e decorações
+│   │   ├── BestiaryModal.tsx       # Enciclopédia de peixes capturados e silhuetas
+│   │   ├── CatchModal.tsx          # Animação de captura com HoloCard 3D
+│   │   ├── EventModal.tsx          # Eventos aleatórios e escolhas de narrativa
+│   │   ├── FishingStage.tsx        # Cenário central interativo com água, boia e linha
+│   │   ├── FishShadows.tsx         # Sombras de peixes procedurais no fundo d'água
+│   │   ├── FloatingFeedback.tsx    # Indicadores visuais flutuantes de XP e moedas
+│   │   ├── GoldenFishSpawner.tsx   # Peixe Dourado Lendário ("Golden Cookie")
+│   │   ├── HeaderBar.tsx           # Barra de navegação, status, nível e moedas
+│   │   ├── HoloCard.tsx            # Card holográfico 3D interativo com física de tilt
+│   │   ├── IdleFishersWaterVisual.tsx # Visualização dos ajudantes trabalhando na água
+│   │   ├── IdleShopModal.tsx       # Contratação e melhoria de ajudantes automatizados
+│   │   ├── InventoryModal.tsx      # Gestão de peixes capturados e venda em lote
+│   │   ├── LeaderboardModal.tsx    # Quadro de honra e recordes
+│   │   ├── LevelUpModal.tsx        # Celebração de novo nível e pontos de maestria
+│   │   ├── LocationsModal.tsx      # Seleção e desbloqueio de biomas aquáticos
+│   │   ├── MissionsModal.tsx       # Missões diárias e objetivos especiais
+│   │   ├── MobileBottomDock.tsx    # Barra de navegação inferior otimizada para mobile
+│   │   ├── PrestigeModal.tsx       # Renascimento Cósmico, Escamas e Bênçãos
+│   │   ├── ReelTensionMeter.tsx    # Minigame de tensão da linha e Zona Dourada
+│   │   ├── ShopModal.tsx           # Loja de equipamentos (varas e iscas)
+│   │   ├── TalentModal.tsx         # Árvore de Maestria (3 ramos e 18 talentos)
+│   │   └── WeatherBanner.tsx       # Indicador e efeitos do clima em tempo real
+│   ├── game/
+│   │   ├── data/                   # Definições estáticas e tabelas de balanceamento
+│   │   │   ├── achievements.data.ts # Conquistas e critérios
+│   │   │   ├── aquarium.data.ts    # Temas, decorações e tiers do viveiro
+│   │   │   ├── fish.data.ts        # Catálogo com mais de 30 espécies e pesos
+│   │   │   ├── idle.data.ts        # Ajudantes de pesca e custos de upgrade
+│   │   │   ├── items.data.ts       # Varas, molinetes e iscas
+│   │   │   ├── locations.data.ts   # Biomas, níveis requeridos e tabelas de pesca
+│   │   │   ├── missions.data.ts    # Gerador de missões diárias
+│   │   │   ├── prestige.data.ts    # Bênçãos de Netuno e custos de Escamas
+│   │   │   ├── talents.data.ts     # Ramos de maestria, Keystones e bônus
+│   │   │   └── weather.data.ts     # Ciclos climáticos e multiplicadores
+│   │   └── managers/               # Motores de regra de negócio (Game Engine)
+│   │       ├── AchievementManager.ts # Validação de conquistas
+│   │       ├── AquariumManager.ts    # Simulação de visitantes, alimentação e lucro
+│   │       ├── FishingEngine.ts      # Física do anzol, mordidas e capturas
+│   │       ├── IdleManager.ts        # Cálculo de CPS e ganhos offline
+│   │       ├── LocationManager.ts    # Desbloqueio e restrição de biomas
+│   │       ├── MissionManager.ts     # Ciclo de missões diárias
+│   │       ├── PlayerManager.ts      # Níveis, XP, inventário e persistência
+│   │       ├── PrestigeManager.ts   # Cálculo de Escamas e Bênçãos Cósmicas
+│   │       ├── TalentManager.ts      # Alocação de pontos de maestria
+│   │       └── WeatherManager.ts     # Rotação climática em tempo real
+│   ├── utils/
+│   │   ├── audio.ts                # Sintetizador sonoro procedural via Web Audio
+│   │   └── vibrate.ts              # Feedback tátil háptico para celulares
+│   ├── App.tsx                     # Orquestração principal e ciclo do jogo
+│   └── main.tsx                    # Ponto de montagem da aplicação
+├── TODO.md                         # Registro de desenvolvimento e roadmap
+├── metadata.json                   # Metadados e configurações da plataforma
+├── package.json
+└── vite.config.ts
+```
 
 ---
 
@@ -123,9 +209,9 @@ Sistema de progressão por árvore de habilidades desbloqueado por níveis e pon
 
 ### Pré-requisitos
 - [Node.js](https://nodejs.org/) (versão 18 ou superior)
-- `npm`, `yarn` ou `bun`
+- Gerenciador de pacotes: `npm`, `yarn` ou `bun`
 
-### Instalação
+### Passo a Passo
 
 1. Clone o repositório:
 ```bash
@@ -138,56 +224,23 @@ cd pescaria-retro-game
 npm install
 ```
 
-3. Inicie o servidor de desenvolvimento:
+3. Inicie o servidor de desenvolvimento local:
 ```bash
 npm run dev
 ```
 
-4. Acesse no navegador:
+4. Abra no seu navegador:
 ```
 http://localhost:3000
 ```
 
----
-
-## 📦 Estrutura do Projeto
-
-```text
-├── .github/workflows/          # Automação de deploy para GitHub Pages
-├── public/assets/              # Imagens e ilustrações do jogo
-├── src/
-│   ├── components/             # Componentes React de UI e Modais
-│   │   ├── AquariumModal.tsx   # Viveiro 3D com peixes animados e gorjetas
-│   │   ├── BestiaryModal.tsx   # Catálogo e enciclopédia das espécies
-│   │   ├── CatchModal.tsx      # Resultado da pescaria com HoloCard 3D
-│   │   ├── FishingStage.tsx    # Cenário central interativo com água e boia
-│   │   ├── GoldenFishSpawner.tsx # Evento do Peixe Dourado saltador
-│   │   ├── HeaderBar.tsx       # Barra de status, moedas, nível e menu
-│   │   ├── IdleShopModal.tsx   # Contratação de ajudantes e automações
-│   │   ├── InventoryModal.tsx  # Gestão de cesto e venda em lote
-│   │   ├── LocationsModal.tsx  # Seleção de biomas aquáticos
-│   │   ├── MissionsModal.tsx   # Missões diárias e objetivos
-│   │   ├── PrestigeModal.tsx   # Renascimento Cósmico e Escamas
-│   │   ├── ReelTensionMeter.tsx# Minigame de tensão e Zona Dourada
-│   │   ├── ShopModal.tsx       # Loja de varas e iscas
-│   │   ├── TalentModal.tsx     # Árvore de Maestria com 3 ramos
-│   │   └── WeatherBanner.tsx   # Indicador do clima dinâmico
-│   ├── game/
-│   │   ├── data/               # Banco de dados (peixes, itens, clima, talentos, prestígio)
-│   │   └── managers/           # Motores de regra de negócio do jogo
-│   ├── utils/
-│   │   ├── audio.ts            # Síntese sonora procedural via Web Audio
-│   │   └── vibrate.ts          # Feedback háptico tátil mobile
-│   ├── App.tsx                 # Estado global e orquestração do jogo
-│   └── main.tsx                # Ponto de entrada React
-├── TODO.md                     # Roadmap estratégico de melhorias e balanceamento
-├── metadata.json
-├── package.json
-└── vite.config.ts
+5. Para compilar a versão de produção:
+```bash
+npm run build
 ```
 
 ---
 
 ## 📄 Licença
 
-Este projeto é distribuído sob a licença **MIT**.
+Este projeto é desenvolvido sob a licença **MIT** — sinta-se livre para jogar, modificar e contribuir!

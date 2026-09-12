@@ -150,17 +150,27 @@ export class FishingEngine {
       }
     }
 
+    // Bônus da Bênção Cósmica Sorte das Constelações
+    if (player.cosmicBlessings?.includes('blessing_celestial_luck')) {
+      rarityMod['rare'] = (rarityMod['rare'] || 0) + 15;
+      rarityMod['epic'] = (rarityMod['epic'] || 0) + 15;
+      rarityMod['legendary'] = (rarityMod['legendary'] || 0) + 10;
+    }
+
     // Player boost
     const playerBoost: Record<string, number> = {};
     if (player.boosts.rarity) {
       playerBoost[player.boosts.rarity.rarity] = player.boosts.rarity.value;
     }
 
-    // Consome isca se houver (com chance de conservação de isca pelo talento)
-    const baitSaveChance = this.talentManager ? this.talentManager.getBaitSaveChance(player) : 0;
+    // Consome isca se houver (com chance de conservação de isca por talentos ou Alquimia das Iscas)
+    const talentBaitSave = this.talentManager ? this.talentManager.getBaitSaveChance(player) : 0;
+    const blessingBaitSave = player.cosmicBlessings?.includes('blessing_bait_alchemy') ? 0.20 : 0;
+    const totalBaitSaveChance = Math.min(0.8, talentBaitSave + blessingBaitSave);
+
     let consumedBait = false;
     if (player.equipment.bait) {
-      if (Math.random() >= baitSaveChance) {
+      if (Math.random() >= totalBaitSaveChance) {
         consumedBait = this.playerManager.consumeBait(player);
       } else {
         consumedBait = true; // Permanece equipada sem gastar unidades do inventário
@@ -339,10 +349,20 @@ export class FishingEngine {
       xpGained += 5; // XP de consolação por tentar
     }
 
+    // Aplica bônus de Domínio Perfeito no XP (+20% XP)
+    if (options?.isPerfect && xpGained > 0) {
+      xpGained = Math.round(xpGained * 1.2);
+    }
+
     // Aplica multiplicador de XP por talentos (Sabedoria Ancestral)
     if (this.talentManager && xpGained > 0) {
       const xpMult = this.talentManager.getXpMultiplier(player);
       xpGained = Math.round(xpGained * xpMult);
+    }
+
+    // Aplica bônus de XP pela Bênção Cósmica Sabedoria das Estrelas (+25% XP)
+    if (player.cosmicBlessings?.includes('blessing_xp_resonance') && xpGained > 0) {
+      xpGained = Math.round(xpGained * 1.25);
     }
 
     // Aplica XP ganho

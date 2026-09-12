@@ -33,6 +33,7 @@ interface IdleShopModalProps {
   onClose: () => void;
   player: PlayerProfile;
   totalCps: number;
+  maxCpsCapacity?: number;
   availableUpgrades: IdleUpgrade[];
   onBuyTier: (tierId: string) => void;
   onBuyUpgrade: (upgradeId: string) => void;
@@ -43,6 +44,7 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
   onClose,
   player,
   totalCps,
+  maxCpsCapacity = 500,
   availableUpgrades,
   onBuyTier,
   onBuyUpgrade,
@@ -76,7 +78,7 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
                 </span>
               </h2>
               <p className="text-xs text-slate-400">
-                Contrate ajudantes e compre melhorias que dobram sua produção e cliques!
+                Contrate frotas e compre melhorias que multiplicam sua produção passiva!
               </p>
             </div>
           </div>
@@ -89,9 +91,9 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
           </button>
         </div>
 
-        {/* Barra de Status de Produção Total & Clique */}
+        {/* Barra de Status de Produção Total, Capacidade de Nível & Moedas */}
         <div className="px-4 sm:px-6 py-3 bg-slate-950/40 border-b border-slate-800/80 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 flex-wrap">
             <div className="flex items-center gap-1.5">
               <TrendingUp className="w-4 h-4 text-emerald-400" />
               <span className="text-xs text-slate-300">Passivo:</span>
@@ -100,18 +102,23 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
               </span>
             </div>
 
+            <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-slate-800/60 border border-slate-700/60 text-[11px] text-slate-300">
+              <span>Capacidade Nv. {player.level}:</span>
+              <strong className="text-amber-300">{maxCpsCapacity.toLocaleString('pt-BR')} 🪙/s</strong>
+            </div>
+
             <div className="flex items-center gap-1.5">
               <Zap className="w-4 h-4 text-yellow-400" />
-              <span className="text-xs text-slate-300">Clique na água:</span>
+              <span className="text-xs text-slate-300">Clique:</span>
               <span className="text-sm font-black text-yellow-300">
-                +{1 + Math.floor(totalCps * 0.03)} 🪙
+                +{1 + player.level + Math.floor(totalCps * 0.015)} 🪙
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-950/40 border border-amber-500/30 text-amber-300 text-xs font-black">
             <Coins className="w-3.5 h-3.5 text-amber-400" />
-            <span>{player.coins.toLocaleString('pt-BR')} 🪙 disponíveis</span>
+            <span>{player.coins.toLocaleString('pt-BR')} 🪙</span>
           </div>
         </div>
 
@@ -196,22 +203,30 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
           {IDLE_FISHER_TIERS.map((tier) => {
             const count = idleFishers[tier.id] || 0;
             const cost = calculateTierCost(tier, count);
-            const canAfford = player.coins >= cost;
+            const isLevelLocked = tier.requiredLevel > player.level;
+            const canAfford = !isLevelLocked && player.coins >= cost;
             const tierCps = calculateTierTotalCps(tier, count);
 
             return (
               <div
                 key={tier.id}
                 className={`p-3.5 sm:p-4 rounded-2xl border transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 ${
-                  canAfford
+                  isLevelLocked
+                    ? 'border-slate-800 bg-slate-950/20 opacity-60'
+                    : canAfford
                     ? 'border-slate-700/80 bg-slate-950/60 hover:border-amber-400/50 hover:bg-slate-950/90'
-                    : 'border-slate-800/80 bg-slate-950/30 opacity-75'
+                    : 'border-slate-800/80 bg-slate-950/30 opacity-80'
                 }`}
               >
                 {/* Lado Esquerdo: Ícone + Info */}
                 <div className="flex items-start gap-3">
-                  <div className="w-12 h-12 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl shrink-0 shadow-md">
+                  <div className="w-12 h-12 rounded-2xl bg-slate-800/90 border border-slate-700 flex items-center justify-center text-2xl shrink-0 shadow-md relative">
                     {tier.emoji}
+                    {isLevelLocked && (
+                      <span className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-rose-500/90 text-white flex items-center justify-center text-[10px] font-black border border-slate-900">
+                        🔒
+                      </span>
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
@@ -221,6 +236,11 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
                       {count > 0 && (
                         <span className="px-2 py-0.5 rounded-full bg-slate-800 text-amber-300 text-xs font-black border border-slate-700">
                           x{count}
+                        </span>
+                      )}
+                      {isLevelLocked && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-950/70 border border-rose-500/40 text-rose-300 text-[10px] font-bold">
+                          Requer Nível {tier.requiredLevel}
                         </span>
                       )}
                     </div>
@@ -243,18 +263,26 @@ export const IdleShopModal: React.FC<IdleShopModalProps> = ({
                   </div>
                 </div>
 
-                {/* Lado Direito: Botão de Compra com Custo Exponencial */}
+                {/* Lado Direito: Botão de Compra com Custo Exponencial ou Trava de Nível */}
                 <button
                   onClick={() => onBuyTier(tier.id)}
-                  disabled={!canAfford}
+                  disabled={isLevelLocked || !canAfford}
                   className={`w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md shrink-0 ${
-                    canAfford
+                    isLevelLocked
+                      ? 'bg-slate-900 text-slate-500 border border-slate-800 cursor-not-allowed'
+                      : canAfford
                       ? 'bg-gradient-to-r from-amber-400 to-yellow-400 text-slate-950 hover:from-amber-300 hover:to-yellow-300 active:scale-95 shadow-amber-500/20'
                       : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700'
                   }`}
                 >
-                  <Coins className="w-4 h-4" />
-                  <span>{cost.toLocaleString('pt-BR')} 🪙</span>
+                  {isLevelLocked ? (
+                    <span>Bloqueado (Nv. {tier.requiredLevel})</span>
+                  ) : (
+                    <>
+                      <Coins className="w-4 h-4" />
+                      <span>{cost.toLocaleString('pt-BR')} 🪙</span>
+                    </>
+                  )}
                 </button>
               </div>
             );

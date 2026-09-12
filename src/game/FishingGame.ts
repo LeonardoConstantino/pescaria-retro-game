@@ -392,8 +392,8 @@ export class FishingGame {
       level: player?.level || 1,
       coins: player?.coins || 0,
       fishCaught: player?.stats?.totalFishCaught || 0,
-      ascensionCount: player?.prestige?.ascensionCount || 0,
-      cosmicScales: player?.prestige?.cosmicScales || 0,
+      ascensionCount: player?.stats?.ascensionsCount || 0,
+      cosmicScales: player?.cosmicScales || 0,
     };
 
     const savePayload = {

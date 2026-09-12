@@ -9,6 +9,7 @@ import { GameAssetImage } from './GameAssetImage.js';
 import { FishShadows } from './FishShadows.js';
 import { IdleFishersWaterVisual } from './IdleFishersWaterVisual.js';
 import { GoldenFishSpawner } from './GoldenFishSpawner.js';
+import { WeatherAtmosphereVisual } from './WeatherAtmosphereVisual.js';
 import { sound } from '../utils/audio.js';
 import { vibrate } from '../utils/vibrate.js';
 import { WeatherInfo } from '../game/data/weather.data.js';
@@ -186,6 +187,9 @@ export const FishingStage: React.FC<FishingStageProps> = ({
         {/* Estrelas / Partículas de Ambiente */}
         <div className="absolute inset-0 opacity-20 pointer-events-none bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:24px_24px] z-[1]" />
 
+        {/* Efeitos Visuais Atmosféricos de Clima Dinâmico (Chuva, Ondulações, Relâmpagos, Luar e Sol) */}
+        <WeatherAtmosphereVisual weather={weather} />
+
         {/* Camada Superior: Cartões de Vara & Isca equipadas */}
         <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
           {/* Cartão da Vara Equipada */}
@@ -338,19 +342,6 @@ export const FishingStage: React.FC<FishingStageProps> = ({
           <div
             className={`w-full h-full bg-gradient-to-t ${locVisual.water} backdrop-blur-[2px] relative flex items-center justify-center overflow-hidden`}
           >
-            {/* Efeito Visual de Clima Ativo (Gotas de Chuva / Relâmpagos / Brilho Lunar) */}
-            {weather?.id === 'rainy' && (
-              <div className="absolute inset-0 pointer-events-none z-0 opacity-40">
-                <div className="w-full h-full bg-[radial-gradient(#38bdf8_1px,transparent_1px)] [background-size:16px_16px] animate-pulse" />
-              </div>
-            )}
-            {weather?.id === 'storm' && (
-              <div className="absolute inset-0 pointer-events-none z-0 opacity-30 bg-indigo-500/10 animate-pulse" />
-            )}
-            {weather?.id === 'mystic_moon' && (
-              <div className="absolute inset-0 pointer-events-none z-0 bg-gradient-to-t from-violet-500/10 via-transparent to-transparent opacity-60" />
-            )}
-
             {/* Linhas de Ondulação na Água */}
             <div className="absolute inset-0 opacity-40">
               <div className="w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-cyan-400/10 via-transparent to-transparent animate-pulse" />

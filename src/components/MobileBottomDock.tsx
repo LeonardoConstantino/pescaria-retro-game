@@ -25,7 +25,9 @@ import {
   VolumeX,
   RotateCcw,
   X,
+  FileJson,
 } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton.js';
 import { sound } from '../utils/audio.js';
 import { PlayerProfile } from '../game/managers/PlayerManager.js';
 import { GameLocation } from '../game/data/locations.data.js';
@@ -47,6 +49,7 @@ interface MobileBottomDockProps {
   onOpenAquarium: () => void;
   onOpenTalents: () => void;
   onOpenBestiary: () => void;
+  onOpenBackup?: () => void;
   onResetProgress: () => void;
   onScrollToFishingStage?: () => void;
 }
@@ -68,6 +71,7 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
   onOpenAquarium,
   onOpenTalents,
   onOpenBestiary,
+  onOpenBackup,
   onResetProgress,
   onScrollToFishingStage,
 }) => {
@@ -372,6 +376,31 @@ export const MobileBottomDock: React.FC<MobileBottomDockProps> = ({
                     </div>
                   </div>
                 </button>
+
+                {/* Instalar Aplicativo (PWA) */}
+                <PWAInstallButton variant="dock" />
+
+                {/* Backup & Restauração de Save (.JSON) */}
+                {onOpenBackup && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMoreMenuOpen(false);
+                      handleAction(onOpenBackup);
+                    }}
+                    className="col-span-2 p-3 rounded-2xl bg-sky-950/40 border border-sky-500/30 flex items-center gap-2.5 text-left active:scale-95 transition-transform"
+                  >
+                    <div className="w-9 h-9 rounded-xl bg-sky-500/20 flex items-center justify-center shrink-0">
+                      <FileJson className="w-4 h-4 text-sky-400" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-xs font-bold text-sky-200">Backup & Restauração (.JSON)</div>
+                      <div className="text-[10px] text-sky-400/80 font-medium">
+                        Exporte ou importe seu progresso para salvar seus dados
+                      </div>
+                    </div>
+                  </button>
+                )}
               </div>
 
               {/* Controles de Som & Reset */}

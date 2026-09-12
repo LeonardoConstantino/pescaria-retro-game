@@ -26,7 +26,10 @@ import { MissionsModal } from './components/MissionsModal.js';
 import { AquariumModal } from './components/AquariumModal.js';
 import { TalentModal } from './components/TalentModal.js';
 import { WeatherBanner } from './components/WeatherBanner.js';
+import { WeatherType } from './game/data/weather.data.js';
 import { MobileBottomDock } from './components/MobileBottomDock.js';
+import { BackupModal } from './components/BackupModal.js';
+import { OfflineBanner } from './components/OfflineBanner.js';
 import { sound } from './utils/audio.js';
 import { vibrate } from './utils/vibrate.js';
 import {
@@ -43,6 +46,7 @@ import {
   Bot,
   Scroll,
   Waves,
+  FileJson,
 } from 'lucide-react';
 
 const CHAT_ID = 'web_session';
@@ -77,6 +81,7 @@ export default function App() {
   const [showMissions, setShowMissions] = useState(false);
   const [showAquarium, setShowAquarium] = useState(false);
   const [showTalents, setShowTalents] = useState(false);
+  const [showBackup, setShowBackup] = useState(false);
   const [unclaimedMissions, setUnclaimedMissions] = useState(() => game.missionManager.getUnclaimedCount(USER_ID));
 
   // Pontos de Talentos Disponíveis
@@ -572,19 +577,51 @@ export default function App() {
     showToast(`Nome alterado para "${newName}"!`, 'info');
   };
 
-  // 10. REINICIAR PROGRESSO
+  // 10. BACKUP E RESTAURAÇÃO DE SAVE (.JSON)
+  const handleExportSave = () => {
+    return game.exportSave(USER_ID);
+  };
+
+  const handleImportSave = (jsonContent: string) => {
+    const res = game.importSave(jsonContent, USER_ID);
+    if (res.ok && res.data) {
+      setPlayer({ ...res.data });
+      setUnclaimedMissions(game.missionManager.getUnclaimedCount(USER_ID));
+      setActiveSession(game.getActiveSession(CHAT_ID, USER_ID));
+      return { ok: true };
+    }
+    return { ok: false, error: res.message || 'Falha ao restaurar save' };
+  };
+
+  const handleResetSave = () => {
+    game.resetAllSaveData();
+    const fresh = game.initPlayer(USER_ID, 'Capitão Pescador');
+    setPlayer({ ...fresh });
+    setUnclaimedMissions(0);
+    setActiveSession(null);
+  };
+
+  // 11. REINICIAR PROGRESSO
   const handleResetProgress = () => {
     if (window.confirm('Deseja realmente resetar seu progresso e recomeçar do Nível 1 com a Vara Básica?')) {
-      game.storage.clear();
-      const fresh = game.initPlayer(USER_ID, 'Capitão Pescador');
-      setPlayer({ ...fresh });
-      setActiveSession(null);
+      handleResetSave();
       showToast('Progresso reiniciado com sucesso!', 'info');
     }
   };
 
+  // 12. ALTERAR CLIMA DO LAGO
+  const handleSelectWeather = (type: WeatherType) => {
+    const updatedWeather = game.setWeather(type);
+    setCurrentWeather(updatedWeather);
+    setWeatherSecondsLeft(game.getWeatherTimeRemaining());
+    showToast(`Clima alterado: ${updatedWeather.name}! ${updatedWeather.buffDescription}`, 'info');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-400 selection:text-slate-950">
+      {/* ── NOTIFICAÇÃO DE STATUS DE REDE / OFFLINE ── */}
+      <OfflineBanner />
+
       {/* ── BARRA SUPERIOR (HEADER) ── */}
       <HeaderBar
         player={player}
@@ -601,6 +638,7 @@ export default function App() {
         onOpenMissions={() => setShowMissions(true)}
         onOpenAquarium={() => setShowAquarium(true)}
         onOpenTalents={() => setShowTalents(true)}
+        onOpenBackup={() => setShowBackup(true)}
         unclaimedMissionsCount={unclaimedMissions}
         availableTalentPoints={availableTalentPoints}
         onUpdatePlayerName={handleUpdatePlayerName}
@@ -622,6 +660,7 @@ export default function App() {
           <WeatherBanner
             weather={currentWeather}
             timeRemainingSeconds={weatherSecondsLeft}
+            onSelectWeather={handleSelectWeather}
           />
         </div>
 
@@ -692,8 +731,16 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowBackup(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-sky-400 hover:text-sky-300 border border-slate-800 hover:border-sky-500/40 transition-all shadow-sm font-semibold"
+              title="Gerenciar Backup e Restauração (.JSON)"
+            >
+              <FileJson className="w-4 h-4 text-sky-400" />
+              <span>Backup / Save</span>
+            </button>
             <span className="text-slate-500 text-[11px] hidden sm:inline">
-              Pescarias Realizadas: {player.stats.totalFishCaught}
+              Pescarias: {player.stats.totalFishCaught}
             </span>
             <button
               onClick={handleResetProgress}
@@ -908,10 +955,22 @@ export default function App() {
         onOpenAquarium={() => setShowAquarium(true)}
         onOpenTalents={() => setShowTalents(true)}
         onOpenBestiary={() => setShowBestiary(true)}
+        onOpenBackup={() => setShowBackup(true)}
         onResetProgress={handleResetProgress}
         onScrollToFishingStage={() => {
           window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
+      />
+
+      {/* Modal de Backup e Restauração (.JSON) */}
+      <BackupModal
+        isOpen={showBackup}
+        onClose={() => setShowBackup(false)}
+        player={player}
+        onExportSave={handleExportSave}
+        onImportSave={handleImportSave}
+        onResetSave={handleResetSave}
+        onShowToast={showToast}
       />
     </div>
   );

@@ -116,14 +116,29 @@ Este documento reúne o planejamento estratégico, ajustes de balanceamento econ
 
 ## 💎 5. Sugestões de Polimento & Novas Adições
 
-- [ ] **Efeitos Visuais de Clima no Cenário**:
-  - Gotas de chuva caindo com micro-ondulações na superfície d'água durante clima chuvoso.
-  - Céu estrelado e reflexo prateado na água durante o clima de Lua Mística.
+- [x] **Efeitos Visuais de Clima no Cenário**:
+  - [x] **Chuva Suave (`rainy`)**: Gotas com inclinação natural caindo do céu, micro-ondulações elípticas em expansão na superfície d'água, respingos pontuais e névoa suave no horizonte.
+  - [x] **Tempestade Elétrica (`storm`)**: Chuva torrencial rápida, vento lateral, ondulações agitadas e relâmpagos procedurais ramificados cortando o céu com trovão distante procedural via Web Audio API.
+  - [x] **Lua Cheia Mística (`mystic_moon`)**: Disco lunar prateado celestial com halo etéreo, céu estrelado com estrelas cintilantes e estrelas cadentes periódicas, orbes arcanos (will-o'-wisps) flutuando sobre a água e trilha contínua de reflexo prateado ondulando no leito do lago.
+  - [x] **Dia Ensolarado (`sunny`)**: Sol dourado radiante com feixes de luz solar volumétricos (God Rays) e pontos de brilho especular cintilantes (Glints) na crista d'água.
+  - [x] **Banner de Clima Interativo**: Modal detalhado ao clicar no `WeatherBanner` com explicação de todos os efeitos visuais, multiplicadores ativos e controle para alternar o clima do lago.
+  - [x] **Performance Otimizada**: Componente `WeatherAtmosphereVisual` em Canvas 2D acelerado, responsivo via `ResizeObserver` e pausado automaticamente quando a aba está em background (`document.hidden`).
 - [ ] **Controle de Volume / Áudio**:
   - Além do botão Mute atual, adicionar slider ou seleção de volume (SFX / Ambiente) nas configurações.
-- [ ] **Backup de Save (Exportar / Importar JSON)**:
-  - Botão para exportar o progresso em arquivo JSON e importar em outro dispositivo ou navegador.
-- [ ] **PWA (Progressive Web App)**:
-  - Manifesto web e service worker para permitir "Adicionar à Tela de Início" no Android/iOS, funcionando como app nativo com tela cheia.
+- [x] **Backup de Save (Exportar / Importar JSON)**:
+  - [x] Modal dedicado `BackupModal` com abas para Exportar, Restaurar e Reiniciar.
+  - [x] Download instantâneo de arquivo `.json` com nome e data formatados (`pescaria_save_<nome>_<data>.json`).
+  - [x] Cópia do JSON para área de transferência para facilidade em dispositivos móveis.
+  - [x] Upload via seletor de arquivo `.json` ou colando texto diretamente.
+  - [x] Card de pré-visualização de segurança (validação do save, nível, moedas, peixes e data antes de restaurar).
+  - [x] Acesso fácil pelo Header superior (Desktop e Mobile), barra inferior de atalhos e gaveta de opções do mobile dock.
+- [x] **PWA (Progressive Web App)**:
+  - [x] Manifesto W3C Web App Manifest completo com escopo, start_url, theme_color `#0f172a`, background `#0f172a` e exibição standalone.
+  - [x] Conjunto de ícones oficiais: SVG vetorial, PNG 192x192, 512x512, maskable 512x512 (com safe-zone de 80% para Android) e Apple Touch Icon 180x180 para iOS.
+  - [x] Service Worker configurado via `vite-plugin-pwa` com precache de assets, páginas e fontes, permitindo funcionamento offline integral.
+  - [x] Hook customizado `usePWAInstall` com escuta do evento `beforeinstallprompt` e detecção de standalone / iOS Safari.
+  - [x] Botão e modal interativo `PWAInstallButton` e `PWAInstallModal` no Header e na gaveta do Dock Mobile.
+  - [x] Banner de status de conexão `OfflineBanner` com aviso em tempo real de modo offline e reconexão.
+
 - [ ] **Evento Especial de Bioma (Peixe Lendário Chefe)**:
   - Aparição rara de um desafio de pesca com múltiplas fases de tensão na linha para capturar um peixe colossal único de cada bioma.

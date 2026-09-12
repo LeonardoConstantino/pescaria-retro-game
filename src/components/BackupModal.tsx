@@ -80,7 +80,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
 
-      sound.playCoin();
+      sound.playCoins();
       onShowToast('Arquivo de save baixado com sucesso!', 'success');
     } catch (err: any) {
       onShowToast('Falha ao gerar arquivo de download: ' + err?.message, 'warning');
@@ -93,7 +93,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
       const { json } = onExportSave();
       navigator.clipboard.writeText(json);
       setCopied(true);
-      sound.playCoin();
+      sound.playCoins();
       onShowToast('Dados copiados para a área de transferência!', 'success');
       setTimeout(() => setCopied(false), 2500);
     } catch {
@@ -136,7 +136,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
         exportedAt: parsed.exportedAt,
         rawJson: content,
       });
-      sound.playWaterSplash();
+      sound.playSplash();
     } catch (e: any) {
       setPreviewData(null);
       setImportError('Arquivo inválido: ' + (e?.message || 'JSON incorreto'));
@@ -288,7 +288,7 @@ export const BackupModal: React.FC<BackupModalProps> = ({
                     {player.coins.toLocaleString('pt-BR')}
                   </div>
                   <div className="text-[11px] text-purple-400">
-                    {player.prestige?.cosmicScales ?? 0} Escamas Cósmicas
+                    {player.cosmicScales ?? 0} Escamas Cósmicas
                   </div>
                 </div>
               </div>

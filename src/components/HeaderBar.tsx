@@ -23,7 +23,9 @@ import {
   Scroll,
   Waves,
   GraduationCap,
+  FileJson,
 } from 'lucide-react';
+import { PWAInstallButton } from './PWAInstallButton.js';
 
 interface HeaderBarProps {
   player: PlayerProfile;
@@ -42,6 +44,7 @@ interface HeaderBarProps {
   onOpenMissions: () => void;
   onOpenAquarium: () => void;
   onOpenTalents?: () => void;
+  onOpenBackup?: () => void;
   onUpdatePlayerName: (newName: string) => void;
 }
 
@@ -62,6 +65,7 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
   onOpenMissions,
   onOpenAquarium,
   onOpenTalents,
+  onOpenBackup,
   onUpdatePlayerName,
 }) => {
   const [isMuted, setIsMuted] = useState(!sound.enabled);
@@ -344,6 +348,20 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
             <Award className="w-4 h-4 text-yellow-400" />
           </button>
 
+          {/* Backup & Save (.JSON) */}
+          {onOpenBackup && (
+            <button
+              onClick={onOpenBackup}
+              className="flex items-center justify-center p-2 rounded-xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/70 text-slate-200 transition-all hover:scale-105 active:scale-95 shadow-sm"
+              title="Backup & Restauração de Save (.JSON)"
+            >
+              <FileJson className="w-4 h-4 text-sky-400" />
+            </button>
+          )}
+
+          {/* PWA Install Button (Desktop) */}
+          <PWAInstallButton variant="header" />
+
           {/* Som (Desktop) */}
           <button
             onClick={toggleMute}
@@ -358,8 +376,18 @@ export const HeaderBar: React.FC<HeaderBarProps> = ({
           </button>
         </div>
 
-        {/* Som (Mobile Only - compacto no topo) */}
+        {/* Som, Backup e PWA (Mobile Only - compacto no topo) */}
         <div className="flex md:hidden items-center gap-1.5">
+          <PWAInstallButton variant="header" />
+          {onOpenBackup && (
+            <button
+              onClick={onOpenBackup}
+              className="p-2 rounded-xl bg-slate-800/90 border border-slate-600/70 text-sky-400 transition-all active:scale-95 shadow-sm"
+              title="Backup & Restauração de Save (.JSON)"
+            >
+              <FileJson className="w-4 h-4" />
+            </button>
+          )}
           <button
             onClick={toggleMute}
             className={`p-2 rounded-xl border transition-all active:scale-95 shadow-sm ${

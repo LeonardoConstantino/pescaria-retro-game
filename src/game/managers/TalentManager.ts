@@ -387,6 +387,16 @@ export class TalentManager {
   }
 
   /**
+   * Verifica se o jogador desbloqueou a Previsão Meteorológica (Barômetro Ancestral)
+   * através do Talento 'Sintonia com as Marés' (Rank 1+) ou pela Bênção Cósmica 'Domínio dos Céus'.
+   */
+  hasWeatherForesight(player: PlayerProfile): boolean {
+    const rank = this.getInvestedRank(player, 'talent_weather_attunement');
+    const hasBlessing = !!player.cosmicBlessings?.includes('blessing_storm_caller');
+    return rank >= 1 || hasBlessing;
+  }
+
+  /**
    * Verifica se o jogador possui uma Keystone ativa
    */
   hasKeystone(player: PlayerProfile, keystoneId: string): boolean {

@@ -293,12 +293,43 @@ export class FishingGame {
     return this.weatherManager.getCurrentWeather();
   }
 
+  getNextWeather(): WeatherInfo {
+    return this.weatherManager.getNextWeather();
+  }
+
   getWeatherTimeRemaining(): number {
     return this.weatherManager.getTimeRemainingSeconds();
   }
 
+  hasWeatherForesight(userId: string): boolean {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return false;
+    return this.talentManager.hasWeatherForesight(player);
+  }
+
+  hasWeatherControl(userId: string): boolean {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) return false;
+    return !!player.cosmicBlessings?.includes('blessing_storm_caller');
+  }
+
   setWeather(type: WeatherType): WeatherInfo {
     return this.weatherManager.setWeather(type);
+  }
+
+  setWeatherWithPermission(userId: string, type: WeatherType): R.GameResponse<WeatherInfo> {
+    const player = this.playerManager.getPlayer(userId);
+    if (!player) {
+      return R.error('PLAYER_NOT_FOUND', 'Pescador não encontrado.');
+    }
+    if (!this.hasWeatherControl(userId)) {
+      return R.error(
+        'BLESSING_REQUIRED',
+        'Mudar o clima manualmente requer a Bênção Cósmica "Domínio dos Céus" (disponível na Ascensão Cósmica).',
+      );
+    }
+    const updated = this.weatherManager.setWeather(type);
+    return R.success('weather_changed', updated, 'weather', `⚡ Clima alterado para ${updated.name}!`);
   }
 
   // Aquário / Viveiro de Troféus

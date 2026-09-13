@@ -26,6 +26,7 @@ import { MissionsModal } from './components/MissionsModal.js';
 import { AquariumModal } from './components/AquariumModal.js';
 import { TalentModal } from './components/TalentModal.js';
 import { WeatherBanner } from './components/WeatherBanner.js';
+import { FishingGearBanner } from './components/FishingGearBanner.js';
 import { WeatherType } from './game/data/weather.data.js';
 import { MobileBottomDock } from './components/MobileBottomDock.js';
 import { BackupModal } from './components/BackupModal.js';
@@ -90,9 +91,22 @@ export default function App() {
     return st.ok && st.data ? st.data.availablePoints : 0;
   }, [game, player]);
 
-  // Clima do Lago em Tempo Real
+  // Clima do Lago em Tempo Real & Previsões
   const [currentWeather, setCurrentWeather] = useState(() => game.getCurrentWeather());
+  const [nextWeather, setNextWeather] = useState(() => game.getNextWeather());
   const [weatherSecondsLeft, setWeatherSecondsLeft] = useState(() => game.getWeatherTimeRemaining());
+
+  // Bênção Cósmica: Domínio dos Céus (permite invocar clima manualmente)
+  const hasWeatherControl = useMemo(() => {
+    return !!player.cosmicBlessings?.includes('blessing_storm_caller');
+  }, [player.cosmicBlessings]);
+
+  // Talento: Sintonia com as Marés ou Bênção Cósmica (desbloqueia o Barômetro Ancestral / Previsão)
+  const hasWeatherForesight = useMemo(() => {
+    const hasTalent = (player.talents?.['talent_weather_attunement'] || 0) >= 1;
+    const hasBlessing = !!player.cosmicBlessings?.includes('blessing_storm_caller');
+    return hasTalent || hasBlessing;
+  }, [player.talents, player.cosmicBlessings]);
 
   // Estados de Resultados & Celebração
   const [catchResult, setCatchResult] = useState<FishingCollectResult | null>(null);
@@ -221,8 +235,9 @@ export default function App() {
         refreshPlayer();
       }
 
-      // Atualiza clima do lago
+      // Atualiza clima do lago e previsão
       setCurrentWeather(game.getCurrentWeather());
+      setNextWeather(game.getNextWeather());
       setWeatherSecondsLeft(game.getWeatherTimeRemaining());
 
       // Avalia conquistas alcançadas
@@ -609,12 +624,24 @@ export default function App() {
     }
   };
 
-  // 12. ALTERAR CLIMA DO LAGO
+  // 12. ALTERAR CLIMA DO LAGO (REQUER BÊNÇÃO CÓSMICA)
   const handleSelectWeather = (type: WeatherType) => {
-    const updatedWeather = game.setWeather(type);
-    setCurrentWeather(updatedWeather);
-    setWeatherSecondsLeft(game.getWeatherTimeRemaining());
-    showToast(`Clima alterado: ${updatedWeather.name}! ${updatedWeather.buffDescription}`, 'info');
+    if (!hasWeatherControl) {
+      sound.playThud();
+      showToast('A invocação de clima exige a Bênção Cósmica "Domínio dos Céus" na Ascensão!', 'warning');
+      return;
+    }
+
+    const res = game.setWeatherWithPermission(USER_ID, type);
+    if (res.ok && res.data) {
+      setCurrentWeather(res.data);
+      setNextWeather(game.getNextWeather());
+      setWeatherSecondsLeft(game.getWeatherTimeRemaining());
+      showToast(`⚡ Clima Invocado: ${res.data.name}! ${res.data.buffDescription}`, 'success');
+    } else {
+      sound.playThud();
+      showToast(res.message, 'warning');
+    }
   };
 
   return (
@@ -659,8 +686,25 @@ export default function App() {
         <div className="w-full mb-3">
           <WeatherBanner
             weather={currentWeather}
+            nextWeather={nextWeather}
             timeRemainingSeconds={weatherSecondsLeft}
+            hasWeatherControl={hasWeatherControl}
+            hasWeatherForesight={hasWeatherForesight}
             onSelectWeather={handleSelectWeather}
+            onOpenPrestige={() => setShowPrestige(true)}
+            onOpenTalents={() => setShowTalents(true)}
+          />
+        </div>
+
+        {/* Banner de Equipamentos & Local de Pesca (Fora do Lago para Manter Visão Limpa) */}
+        <div className="w-full mb-3">
+          <FishingGearBanner
+            currentLocation={currentLocation}
+            currentRod={currentRod}
+            currentBait={currentBait}
+            baitCount={currentBait ? (player.inventory.items[currentBait.id] || 0) : 0}
+            onOpenShop={() => setShowShop(true)}
+            onOpenLocations={() => setShowLocations(true)}
           />
         </div>
 

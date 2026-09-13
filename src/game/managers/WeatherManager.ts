@@ -9,11 +9,25 @@ import { WEATHER_TYPES, WeatherType, WeatherInfo } from '../data/weather.data.js
 
 export class WeatherManager {
   private currentWeatherType: WeatherType = 'sunny';
+  private nextWeatherType: WeatherType = 'rainy';
   private weatherStartedAt: number = Date.now();
   private durationMs: number = 3 * 60 * 1000; // 3 minutos por ciclo de clima
 
   constructor() {
-    this.rotateWeather();
+    this.initWeather();
+  }
+
+  private pickRandomDifferent(exclude: WeatherType): WeatherType {
+    const types: WeatherType[] = ['sunny', 'rainy', 'storm', 'mystic_moon'];
+    const choices = types.filter((t) => t !== exclude);
+    return choices[Math.floor(Math.random() * choices.length)];
+  }
+
+  private initWeather() {
+    const types: WeatherType[] = ['sunny', 'rainy', 'storm', 'mystic_moon'];
+    this.currentWeatherType = types[Math.floor(Math.random() * types.length)];
+    this.nextWeatherType = this.pickRandomDifferent(this.currentWeatherType);
+    this.weatherStartedAt = Date.now();
   }
 
   getCurrentWeather(): WeatherInfo {
@@ -24,6 +38,10 @@ export class WeatherManager {
     return WEATHER_TYPES[this.currentWeatherType];
   }
 
+  getNextWeather(): WeatherInfo {
+    return WEATHER_TYPES[this.nextWeatherType];
+  }
+
   getTimeRemainingSeconds(): number {
     const elapsed = Date.now() - this.weatherStartedAt;
     const remaining = Math.max(0, this.durationMs - elapsed);
@@ -31,17 +49,15 @@ export class WeatherManager {
   }
 
   rotateWeather(): WeatherInfo {
-    const types: WeatherType[] = ['sunny', 'rainy', 'storm', 'mystic_moon'];
-    // Escolhe aleatoriamente um clima diferente do atual
-    const choices = types.filter((t) => t !== this.currentWeatherType);
-    const nextType = choices[Math.floor(Math.random() * choices.length)];
-    this.currentWeatherType = nextType;
+    this.currentWeatherType = this.nextWeatherType;
+    this.nextWeatherType = this.pickRandomDifferent(this.currentWeatherType);
     this.weatherStartedAt = Date.now();
     return WEATHER_TYPES[this.currentWeatherType];
   }
 
   setWeather(type: WeatherType): WeatherInfo {
     this.currentWeatherType = type;
+    this.nextWeatherType = this.pickRandomDifferent(type);
     this.weatherStartedAt = Date.now();
     return WEATHER_TYPES[type];
   }

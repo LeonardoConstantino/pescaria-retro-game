@@ -291,10 +291,10 @@ export const TALENTS_DATA: TalentDefinition[] = [
     icon: 'CloudRain',
     maxRank: 3,
     requiredBranchPoints: 3,
-    description: 'Compreensão profunda das mudanças de vento, chuva, sol e tempestades.',
+    description: 'Compreensão profunda das correntes e ventos. Ativa o Barômetro Ancestral para prever o próximo clima.',
     valuesByRank: [0.20, 0.45, 0.70],
     effectDescription: (rank) =>
-      `Amplifica em +${Math.round((TALENTS_DATA.find(t => t.id === 'talent_weather_attunement')?.valuesByRank[rank - 1] || 0.20) * 100)}% os bônus positivos do clima atual no lago.`,
+      `No Rank 1+, desbloqueia a PREVISÃO METEOROLÓGICA do próximo clima no banner do lago. Além disso, amplifica em +${Math.round((TALENTS_DATA.find(t => t.id === 'talent_weather_attunement')?.valuesByRank[rank - 1] || 0.20) * 100)}% os bônus positivos do clima ativo.`,
   },
   {
     id: 'talent_event_magnet',

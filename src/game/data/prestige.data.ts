@@ -26,7 +26,8 @@ export interface CosmicBlessing {
     | 'trophy_value'
     | 'golden_fish_duration'
     | 'bait_preserve'
-    | 'permanent_talent';
+    | 'permanent_talent'
+    | 'weather_control';
   value: number;
 }
 
@@ -132,6 +133,17 @@ export const COSMIC_BLESSINGS: CosmicBlessing[] = [
     flavorText: '"O murmúrio das correntes oceânicas acelera cada batimento do mar."',
     effectType: 'bonus_cps_percent',
     value: 0.30,
+  },
+  {
+    id: 'blessing_storm_caller',
+    name: 'Domínio dos Céus',
+    emoji: '⚡',
+    cost: 35,
+    tier: 2,
+    description: 'Concede a autoridade divina de alterar e invocar qualquer clima no lago quando desejar pelo painel meteorológico.',
+    flavorText: '"Os ventos, nuvens e tempestades curvam-se diante da vontade de quem transcendeu os oceanos mortais."',
+    effectType: 'weather_control',
+    value: 1,
   },
 
   // Tier 3 — Apoteose das Marés (45 a 120 Escamas)

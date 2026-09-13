@@ -1,11 +1,10 @@
 // src/components/FishingStage.tsx
 import React, { useEffect, useState, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
 import { PlayerProfile } from '../game/managers/PlayerManager.js';
 import { GameLocation } from '../game/data/locations.data.js';
 import { GameItem } from '../game/data/items.data.js';
 import { FishingSession } from '../game/managers/SessionManager.js';
-import { GameAssetImage } from './GameAssetImage.js';
 import { FishShadows } from './FishShadows.js';
 import { IdleFishersWaterVisual } from './IdleFishersWaterVisual.js';
 import { GoldenFishSpawner } from './GoldenFishSpawner.js';
@@ -15,12 +14,8 @@ import { vibrate } from '../utils/vibrate.js';
 import { WeatherInfo } from '../game/data/weather.data.js';
 import {
   Anchor,
-  CircleDot,
   Sparkles,
-  AlertCircle,
-  HelpCircle,
   Clock,
-  Compass,
 } from 'lucide-react';
 
 interface FishingStageProps {
@@ -57,7 +52,6 @@ export const FishingStage: React.FC<FishingStageProps> = ({
   weather,
 }) => {
   const [now, setNow] = useState(Date.now());
-  const [showFishPool, setShowFishPool] = useState(false);
 
   // Intervalo para atualizar estado de prontidão da sessão
   useEffect(() => {
@@ -156,7 +150,6 @@ export const FishingStage: React.FC<FishingStageProps> = ({
   };
 
   const locVisual = getLocationVisual();
-  const baitCount = currentBait ? player.inventory.items[currentBait.id] || 0 : 0;
 
   return (
     <div
@@ -189,125 +182,6 @@ export const FishingStage: React.FC<FishingStageProps> = ({
 
         {/* Efeitos Visuais Atmosféricos de Clima Dinâmico (Chuva, Ondulações, Relâmpagos, Luar e Sol) */}
         <WeatherAtmosphereVisual weather={weather} />
-
-        {/* Camada Superior: Cartões de Vara & Isca equipadas */}
-        <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
-          {/* Cartão da Vara Equipada */}
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/60 shadow-lg">
-            <GameAssetImage
-              assetId={currentRod?.assetId || 'rod_basic'}
-              name={currentRod?.name || 'Vara Básica'}
-              size="sm"
-            />
-            <div className="flex flex-col">
-              <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                Vara Equipada
-              </span>
-              <span className="text-xs sm:text-sm font-bold text-slate-100">
-                {currentRod?.name || 'Vara Básica'}
-              </span>
-              <div className="flex items-center gap-2 text-[10px] text-sky-400 font-medium">
-                {currentRod?.modifiers.xpMultiplier && currentRod.modifiers.xpMultiplier > 1 && (
-                  <span>+{Math.round((currentRod.modifiers.xpMultiplier - 1) * 100)}% XP</span>
-                )}
-                {currentRod?.modifiers.cooldownModifier && (
-                  <span>{currentRod.modifiers.cooldownModifier / 1000}s espera</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Cartão da Isca Ativa */}
-          <div className="flex items-center gap-2.5 px-3 py-2 rounded-2xl bg-slate-900/80 backdrop-blur-md border border-slate-700/60 shadow-lg">
-            {currentBait ? (
-              <>
-                <GameAssetImage
-                  assetId={currentBait.assetId}
-                  name={currentBait.name}
-                  size="sm"
-                />
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                    Isca Ativa
-                  </span>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs sm:text-sm font-bold text-amber-300">
-                      {currentBait.name}
-                    </span>
-                    <span className="px-1.5 py-0.2 rounded-md bg-amber-500/20 text-amber-300 text-[10px] font-bold border border-amber-500/30">
-                      {baitCount}x
-                    </span>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="flex items-center gap-2 px-1">
-                <CircleDot className="w-5 h-5 text-slate-500" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] text-slate-400 uppercase tracking-wider font-semibold">
-                    Isca
-                  </span>
-                  <span className="text-xs text-slate-400 italic">Sem isca ativa</span>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Informação do Local e Botão de Dica / Espécies */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-2.5 px-3 py-1.5 rounded-xl bg-slate-950/80 border border-slate-700/60 backdrop-blur-md shadow-lg">
-            <GameAssetImage
-              assetId={currentLocation.assetId}
-              name={currentLocation.name}
-              size="xs"
-              className="rounded-lg ring-sky-400/40"
-            />
-            <div>
-              <span className="text-xs font-bold text-slate-200">{currentLocation.name}</span>
-              <p className="text-[10px] text-slate-400 hidden sm:block">{locVisual.decor}</p>
-            </div>
-          </div>
-
-          <button
-            onClick={() => setShowFishPool(!showFishPool)}
-            className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-slate-900/70 hover:bg-slate-800 text-slate-300 text-xs font-medium border border-slate-700/50 transition-all hover:scale-105 active:scale-95"
-            title="Ver peixes deste local"
-          >
-            <HelpCircle className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden sm:inline">Espécies Nativas</span>
-          </button>
-        </div>
-
-        {/* Modal/Gaveta de Espécies Nativas */}
-        <AnimatePresence>
-          {showFishPool && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="absolute top-16 right-4 z-20 w-72 p-3 rounded-2xl bg-slate-900/95 border border-sky-500/30 backdrop-blur-xl shadow-2xl text-xs"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-slate-800 mb-2">
-                <span className="font-bold text-sky-300">Peixes em {currentLocation.name}:</span>
-                <button
-                  onClick={() => setShowFishPool(false)}
-                  className="text-slate-400 hover:text-slate-200 text-xs font-bold px-1"
-                >
-                  ✕
-                </button>
-              </div>
-              <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
-                {currentLocation.fishPool.map((fId) => (
-                  <div key={fId} className="flex items-center gap-2 py-0.5 text-slate-300">
-                    <span className="w-2 h-2 rounded-full bg-sky-400 shrink-0" />
-                    <span className="capitalize">{fId.replace('fish_', '').replace('_', ' ')}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* ── ÁGUA & BOIA INTERATIVA ── */}
         <div

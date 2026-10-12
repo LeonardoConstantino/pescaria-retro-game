@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="pt-BR" class="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>Jogo de Pesca</title>
+    <meta name="description" content="Web app interativo de pescaria com progressão de níveis, O Despertar dos Titãs Ancestrais com mecânicas de tensão e relíquias mitológicas, árvore de talentos, aquário de troféus, clima dinâmico e bênçãos cósmicas." />
+    <meta property="og:title" content="Jogo de Pesca" />
+    <meta property="og:description" content="Web app interativo de pescaria com progressão de níveis, O Despertar dos Titãs Ancestrais com mecânicas de tensão e relíquias mitológicas, árvore de talentos, aquário de troféus, clima dinâmico e bênçãos cósmicas." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <!-- PWA & Mobile Web Capabilities -->
+    <meta name="theme-color" content="#020617" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Pesca Retro" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png" />
+    <link rel="icon" type="image/svg+xml" href="icon.svg" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+
+    <script>
+      // Limpeza imediata de Service Workers desatualizados e caches antigos em ambiente de dev
+      if (typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function(regs) {
+          for (var i = 0; i < regs.length; i++) {
+            regs[i].unregister().catch(function() {});
+          }
+        }).catch(function() {});
+      }
+      if (typeof caches !== 'undefined') {
+        caches.keys().then(function(keys) {
+          for (var i = 0; i < keys.length; i++) {
+            caches.delete(keys[i]).catch(function() {});
+          }
+        }).catch(function() {});
+      }
+    </script>
+  </head>
+  <body style="background-color: #020617; color: #f8fafc; margin: 0; min-height: 100vh;">
+    <div id="root">
+      <div style="min-height: 100vh; background-color: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif;">
+        <div style="width: 44px; height: 44px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: initial-spin 0.9s linear infinite;"></div>
+        <div style="margin-top: 18px; font-weight: 700; font-size: 13px; color: #38bdf8; letter-spacing: 0.12em; text-transform: uppercase;">Preparando Equipamento...</div>
+        <style>@keyframes initial-spin { to { transform: rotate(360deg); } }</style>
+      </div>
+    </div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

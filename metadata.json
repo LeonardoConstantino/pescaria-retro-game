@@ -1,0 +1,8 @@
+{
+  "name": "Jogo de Pesca",
+  "description": "Web app interativo de pescaria com progressão de níveis, O Despertar dos Titãs Ancestrais com mecânicas de tensão e relíquias mitológicas, árvore de talentos, aquário de troféus, clima dinâmico e bênçãos cósmicas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

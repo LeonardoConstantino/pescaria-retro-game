@@ -20,7 +20,7 @@ export default defineConfig(() => {
           'pwa-maskable-512x512.png',
         ],
         manifest: {
-          id: '/',
+          id: '/pescaria-retro-game/',
           name: 'Jogo de Pesca',
           short_name: 'Pesca Retro',
           description:
@@ -30,8 +30,8 @@ export default defineConfig(() => {
           display: 'standalone',
           orientation: 'portrait-primary',
           lang: 'pt-BR',
-          start_url: '/',
-          scope: '/',
+          start_url: '/pescaria-retro-game/',
+          scope: '/pescaria-retro-game/',
           icons: [
             {
               src: 'pwa-192x192.png',
@@ -64,7 +64,7 @@ export default defineConfig(() => {
         },
       }),
     ],
-    base: '/',
+    base: '/pescaria-retro-game/',
     resolve: {
       alias: {
         '@': path.resolve(__dirname, '.'),

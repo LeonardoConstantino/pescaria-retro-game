@@ -37,12 +37,42 @@
         }).catch(function() {});
       }
     </script>
+    <script>
+      // Diagnóstico e recuperação de inicialização
+      window.__appLoaded = false;
+      window.addEventListener('error', function(event) {
+        if (!window.__appLoaded) {
+          var statusEl = document.getElementById('loading-status-text');
+          var errDetail = event.message || (event.target && event.target.src ? 'Falha ao carregar: ' + event.target.src : 'Erro desconhecido');
+          if (statusEl) {
+            statusEl.innerHTML = '<span style="color: #f87171; display: block; margin-bottom: 8px;">Erro ao carregar o jogo</span>' +
+              '<span style="font-size: 11px; color: #94a3b8; font-weight: normal; text-transform: none; display: block; max-width: 340px; margin: 0 auto 12px; word-break: break-word;">' + errDetail + '</span>' +
+              '<button onclick="try{localStorage.clear();caches.keys().then(function(k){k.forEach(function(x){caches.delete(x)})})}catch(e){}location.reload();" style="padding: 8px 16px; background: #0284c7; color: #fff; font-weight: 700; font-size: 12px; border: none; border-radius: 8px; cursor: pointer;">Limpar Cache e Recarregar</button>';
+          }
+        }
+      }, true);
+
+      // Timeout preventivo se a tela ficar travada por mais de 7 segundos
+      setTimeout(function() {
+        if (!window.__appLoaded) {
+          var statusEl = document.getElementById('loading-status-text');
+          if (statusEl && !statusEl.querySelector('button')) {
+            statusEl.innerHTML = '<span style="color: #38bdf8;">Preparando Equipamento...</span>' +
+              '<p style="font-size: 11px; color: #94a3b8; font-weight: normal; text-transform: none; margin: 10px auto; max-width: 320px; line-height: 1.4;">Se a tela não carregar em instantes, pode ser cache antigo ou caminhos no GitHub Pages.</p>' +
+              '<div style="display: flex; gap: 8px; justify-content: center; margin-top: 8px;">' +
+              '<button onclick="location.reload();" style="padding: 7px 14px; background: #334155; color: #f8fafc; font-size: 12px; font-weight: 600; border: 1px solid #475569; border-radius: 8px; cursor: pointer;">Recarregar</button>' +
+              '<button onclick="try{localStorage.clear();sessionStorage.clear();}catch(e){}location.reload();" style="padding: 7px 14px; background: #0284c7; color: #fff; font-size: 12px; font-weight: 600; border: none; border-radius: 8px; cursor: pointer;">Resetar Cache</button>' +
+              '</div>';
+          }
+        }
+      }, 7000);
+    </script>
   </head>
   <body style="background-color: #020617; color: #f8fafc; margin: 0; min-height: 100vh;">
     <div id="root">
-      <div style="min-height: 100vh; background-color: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif;">
-        <div style="width: 44px; height: 44px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: initial-spin 0.9s linear infinite;"></div>
-        <div style="margin-top: 18px; font-weight: 700; font-size: 13px; color: #38bdf8; letter-spacing: 0.12em; text-transform: uppercase;">Preparando Equipamento...</div>
+      <div style="min-height: 100vh; background-color: #020617; display: flex; flex-direction: column; align-items: center; justify-content: center; font-family: system-ui, -apple-system, sans-serif; padding: 20px; text-align: center;">
+        <div id="initial-spinner" style="width: 44px; height: 44px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: initial-spin 0.9s linear infinite;"></div>
+        <div id="loading-status-text" style="margin-top: 18px; font-weight: 700; font-size: 13px; color: #38bdf8; letter-spacing: 0.12em; text-transform: uppercase;">Preparando Equipamento...</div>
         <style>@keyframes initial-spin { to { transform: rotate(360deg); } }</style>
       </div>
     </div>

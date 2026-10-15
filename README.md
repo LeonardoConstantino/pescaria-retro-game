@@ -11,6 +11,10 @@ Um web app moderno, interativo e imersivo de pescaria e progressão incremental.
 
 > 🎮 **Link do Jogo Online**: [https://leonardoconstantino.github.io/pescaria-retro-game/](https://leonardoconstantino.github.io/pescaria-retro-game/)
 
+<p align="center">
+  <img src="./assets/hero.png" alt="BomberWeb Preview - Arena e Menu Principal" width="100%" style="border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.15);" />
+</p>
+
 ---
 
 ## 🌟 Principais Sistemas & Mecânicas de Jogo
